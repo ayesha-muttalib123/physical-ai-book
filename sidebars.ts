@@ -19,7 +19,7 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Physical AI & Humanoid Robotics',
       items: [
-        'intro',
+        'introduction',
         {
           type: 'category',
           label: 'Core Modules',
@@ -47,7 +47,7 @@ const sidebars: SidebarsConfig = {
             'hardware-edge-kit',
             'hardware-robot-options',
             'economy-jetson-kit',
-            
+            'cloud-alternative'
           ]
         },
         'future-of-humanoids'

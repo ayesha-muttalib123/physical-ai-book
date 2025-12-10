@@ -226,10 +226,10 @@ Recommended Setup:
 
 | Operation                  | Local  | Cloud     | Acceptable? |
 | -------------------------- | ------ | --------- | ----------- |
-| **High-frequency control** | <1ms   | 10-50ms   | ❌ No       |
-| **Perception processing**  | <10ms  | 50-100ms  | ✅ Yes      |
-| **Path planning**          | <100ms | 100-500ms | ✅ Yes      |
-| **Task planning**          | <1s    | 500ms-2s  | ✅ Yes      |
+| **High-frequency control** | &lt;1ms   | 10-50ms   | ❌ No       |
+| **Perception processing**  | &lt;10ms  | 50-100ms  | ✅ Yes      |
+| **Path planning**          | &lt;100ms | 100-500ms | ✅ Yes      |
+| **Task planning**          | &lt;1s    | 500ms-2s  | ✅ Yes      |
 
 ### Bandwidth Requirements
 

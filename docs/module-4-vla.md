@@ -275,8 +275,8 @@ class VLARobotController:
 | ---------------- | -------------------------------- | ---------------- |
 | **Success Rate** | Task completion percentage       | >80%             |
 | **Safety Score** | Collision-free execution         | >95%             |
-| **Efficiency**   | Time to complete tasks           | <2x human time   |
-| **Robustness**   | Performance in varied conditions | <10% degradation |
+| **Efficiency**   | Time to complete tasks           | &lt;2x human time   |
+| **Robustness**   | Performance in varied conditions | &lt;10% degradation |
 
 ## Future Directions
 
