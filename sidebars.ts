@@ -13,47 +13,22 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
  Create as many sidebars as you want.
  */
 const sidebars: SidebarsConfig = {
-  // Manual sidebar configuration for the Physical AI & Humanoid Robotics book
   tutorialSidebar: [
-    {
-      type: 'category',
-      label: 'Physical AI & Humanoid Robotics',
-      items: [
-        'introduction',
-        {
-          type: 'category',
-          label: 'Core Modules',
-          items: [
-            'module-1-ros2',
-            'module-2-simulation',
-            'module-3-nvidia-isaac',
-            
-          ]
-        },
-        {
-          type: 'category',
-          label: 'Course Structure',
-          items: [
-            'learning-outcomes',
-            'weekly-breakdown',
-            'assessments'
-          ]
-        },
-        {
-          type: 'category',
-          label: 'Hardware & Implementation',
-          items: [
-            'hardware-workstation',
-            'hardware-edge-kit',
-            'hardware-robot-options',
-            'economy-jetson-kit',
-            'cloud-alternative'
-          ]
-        },
-        'future-of-humanoids'
-      ]
-    }
-  ]
+    'introduction',
+    'module-1-ros2',
+    'module-2-simulation',
+    'module-3-nvidia-isaac',
+    'module-4-vla',
+    'learning-outcomes',
+    'weekly-breakdown',
+    'assessments',
+    'hardware-workstation',
+    'hardware-edge-kit',
+    'hardware-robot-options',
+    'cloud-alternative',
+    'economy-jetson-kit',
+    'future-of-humanoids'
+  ],
 };
 
 export default sidebars;
