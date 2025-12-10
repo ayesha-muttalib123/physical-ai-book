@@ -1,0 +1,39 @@
+// src/pages/signup.tsx
+import React from 'react';
+import Layout from '@theme/Layout';
+import SignupForm from '../components/auth/SignupForm';
+import { useNavigate } from '@docusaurus/router';
+import { useAuth } from '../contexts/AuthContext';
+
+const SignupPage: React.FC = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignupSuccess = (userData: any) => {
+    // Login the user in the auth context
+    login({
+      id: userData.user_id,
+      email: userData.email,
+      name: userData.name,
+      is_software_focused: null,
+      learning_path: null
+    });
+
+    // Redirect to home or dashboard
+    navigate('/');
+  };
+
+  return (
+    <Layout title="Sign Up" description="Create your account for Physical AI & Humanoid Robotics book">
+      <div className="container margin-vert--lg">
+        <div className="row">
+          <div className="col col--6 col--offset-3">
+            <SignupForm onSignupSuccess={handleSignupSuccess} />
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default SignupPage;
