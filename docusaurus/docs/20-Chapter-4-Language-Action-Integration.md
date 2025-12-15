@@ -1,0 +1,1227 @@
+---
+id: 20-Chapter-4-Language-Action-Integration
+title: "Chapter 4: Language-Action Integration"
+sidebar_position: 20
+---
+
+# Chapter 4: Language-Action Integration
+
+## Overview
+
+This chapter focuses on the integration of natural language understanding with robotic action execution, enabling robots to interpret human commands and execute corresponding physical actions. Students will learn about natural language processing for robotics, command parsing, action planning, and execution frameworks. The chapter covers both symbolic approaches using semantic parsing and neural approaches using end-to-end learning, with emphasis on creating robust systems that can handle ambiguous or complex human instructions.
+
+## Why It Matters
+
+Language-action integration is essential for creating robots that can interact naturally with humans in everyday environments. This capability allows robots to understand and execute complex tasks described in natural language, making them more accessible to non-expert users. Understanding this integration is crucial for developing robots that can work alongside humans, follow instructions, and perform tasks in response to verbal commands in real-world settings.
+
+## Key Concepts
+
+### Natural Language Understanding
+Processing and interpreting human language commands. This involves converting natural language into structured representations that can be understood and acted upon by robotic systems.
+
+### Semantic Parsing
+Converting language to structured action representations. This process translates natural language commands into formal structures that represent the intended action, objects, and relationships.
+
+### Command Grounding
+Connecting language commands to physical actions. This involves mapping abstract language concepts to concrete robot behaviors and environmental entities.
+
+### Action Planning
+Sequencing actions to accomplish complex tasks. This includes breaking down complex commands into executable steps and ensuring proper sequencing and coordination.
+
+### Context Awareness
+Understanding commands in environmental context. This involves using environmental information to interpret ambiguous or incomplete language commands correctly.
+
+### Ambiguity Resolution
+Handling ambiguous or incomplete instructions. This includes using context, prior knowledge, and disambiguation strategies to interpret unclear commands.
+
+### Feedback Integration
+Using action outcomes to refine language understanding. This involves updating the language understanding system based on the results of executed actions.
+
+### Multimodal Integration
+Combining language with visual and spatial information. This includes integrating linguistic input with perceptual data to improve command interpretation and execution.
+
+## Code Examples
+
+### Natural Language Command Parser
+
+Implementation of a natural language command parser for robotic actions:
+
+```python
+#!/usr/bin/env python3
+"""
+Natural Language Command Parser
+Demonstrates parsing natural language commands into robotic actions
+"""
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+from geometry_msgs.msg import Twist, Pose
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import spacy
+import numpy as np
+import math
+from typing import Dict, List, Tuple, Optional
+import json
+import uuid
+
+class CommandParser:
+    """Parse natural language commands into structured actions"""
+    def __init__(self):
+        # Load spaCy model (install with: python -m spacy download en_core_web_sm)
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+        except OSError:
+            print("spaCy model not found. Install with: python -m spacy download en_core_web_sm")
+            self.nlp = None
+
+        # Define action vocabulary
+        self.action_keywords = {
+            'move': ['go', 'move', 'walk', 'navigate', 'approach'],
+            'grasp': ['grasp', 'grab', 'pick up', 'take', 'hold'],
+            'place': ['place', 'put', 'set', 'release'],
+            'look': ['look', 'see', 'find', 'locate', 'search'],
+            'turn': ['turn', 'rotate', 'face', 'orient'],
+            'stop': ['stop', 'halt', 'pause']
+        }
+
+        # Define object categories
+        self.object_categories = [
+            'object', 'item', 'thing', 'box', 'cup', 'bottle', 'book',
+            'chair', 'table', 'door', 'window', 'person', 'robot'
+        ]
+
+        # Define spatial relations
+        self.spatial_relations = [
+            'to', 'toward', 'at', 'on', 'in', 'under', 'over',
+            'near', 'next to', 'beside', 'left', 'right', 'front', 'back'
+        ]
+
+    def parse_command(self, command: str) -> Dict:
+        """Parse a natural language command into structured format"""
+        if self.nlp is None:
+            return self.fallback_parse(command)
+
+        doc = self.nlp(command.lower())
+
+        # Extract action
+        action = self.extract_action(doc)
+
+        # Extract object
+        obj = self.extract_object(doc)
+
+        # Extract location/direction
+        location = self.extract_location(doc)
+
+        # Extract spatial relations
+        relation = self.extract_spatial_relation(doc)
+
+        return {
+            'command': command,
+            'action': action,
+            'object': obj,
+            'location': location,
+            'relation': relation,
+            'entities': [(ent.text, ent.label_) for ent in doc.ents]
+        }
+
+    def fallback_parse(self, command: str) -> Dict:
+        """Fallback parser if spaCy is not available"""
+        command_lower = command.lower()
+
+        # Simple keyword matching
+        action = None
+        for action_type, keywords in self.action_keywords.items():
+            for keyword in keywords:
+                if keyword in command_lower:
+                    action = action_type
+                    break
+            if action:
+                break
+
+        # Extract simple object mentions
+        obj = None
+        for category in self.object_categories:
+            if category in command_lower:
+                obj = category
+                break
+
+        # Extract spatial relations
+        relation = None
+        for relation_word in self.spatial_relations:
+            if relation_word in command_lower:
+                relation = relation_word
+                break
+
+        return {
+            'command': command,
+            'action': action,
+            'object': obj,
+            'location': None,
+            'relation': relation,
+            'entities': []
+        }
+
+    def extract_action(self, doc) -> Optional[str]:
+        """Extract action from parsed document"""
+        for token in doc:
+            if token.pos_ in ['VERB', 'AUX'] and not token.is_stop:
+                for action_type, keywords in self.action_keywords.items():
+                    if any(keyword in [token.text, token.lemma_] for keyword in keywords):
+                        return action_type
+        return None
+
+    def extract_object(self, doc) -> Optional[str]:
+        """Extract object from parsed document"""
+        for token in doc:
+            if token.pos_ in ['NOUN', 'PROPN'] and token.text in self.object_categories:
+                return token.text
+
+        # Look for compound nouns
+        for chunk in doc.noun_chunks:
+            if any(cat in chunk.text.lower() for cat in self.object_categories):
+                return chunk.text
+
+        return None
+
+    def extract_location(self, doc) -> Optional[str]:
+        """Extract location from parsed document"""
+        for ent in doc.ents:
+            if ent.label_ in ['LOC', 'GPE', 'FAC']:  # Location, GeoPolitical Entity, Facility
+                return ent.text
+        return None
+
+    def extract_spatial_relation(self, doc) -> Optional[str]:
+        """Extract spatial relation from parsed document"""
+        for token in doc:
+            if token.text in self.spatial_relations:
+                return token.text
+        return None
+
+class ActionExecutor:
+    """Execute parsed actions on the robot"""
+    def __init__(self):
+        self.action_functions = {
+            'move': self.execute_move,
+            'grasp': self.execute_grasp,
+            'place': self.execute_place,
+            'look': self.execute_look,
+            'turn': self.execute_turn,
+            'stop': self.execute_stop
+        }
+
+    def execute_action(self, parsed_command: Dict):
+        """Execute action based on parsed command"""
+        action_type = parsed_command.get('action')
+        if action_type and action_type in self.action_functions:
+            return self.action_functions[action_type](parsed_command)
+        else:
+            print(f"Unknown action: {action_type}")
+            return False
+
+    def execute_move(self, parsed_command: Dict):
+        """Execute move action"""
+        location = parsed_command.get('location')
+        relation = parsed_command.get('relation')
+        obj = parsed_command.get('object')
+
+        print(f"Moving to {location or obj or 'destination'}")
+        # In real implementation, this would generate movement commands
+        return True
+
+    def execute_grasp(self, parsed_command: Dict):
+        """Execute grasp action"""
+        obj = parsed_command.get('object')
+        print(f"Grasping {obj or 'object'}")
+        # In real implementation, this would control the gripper
+        return True
+
+    def execute_place(self, parsed_command: Dict):
+        """Execute place action"""
+        obj = parsed_command.get('object')
+        location = parsed_command.get('location')
+        print(f"Placing {obj or 'object'} at {location or 'location'}")
+        # In real implementation, this would control the gripper and arm
+        return True
+
+    def execute_look(self, parsed_command: Dict):
+        """Execute look action"""
+        obj = parsed_command.get('object')
+        print(f"Looking for {obj or 'object'}")
+        # In real implementation, this would control the camera/neck
+        return True
+
+    def execute_turn(self, parsed_command: Dict):
+        """Execute turn action"""
+        relation = parsed_command.get('relation')
+        print(f"Turning {relation or 'around'}")
+        # In real implementation, this would rotate the robot
+        return True
+
+    def execute_stop(self, parsed_command: Dict):
+        """Execute stop action"""
+        print("Stopping robot")
+        # In real implementation, this would stop all movement
+        return True
+
+class LanguageActionNode(Node):
+    """ROS2 node for language-action integration"""
+    def __init__(self):
+        super().__init__('language_action_node')
+
+        # Publishers and subscribers
+        self.command_sub = self.create_subscription(
+            String, '/robot_command', self.command_callback, 10)
+        self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+        self.action_status_pub = self.create_publisher(String, '/action_status', 10)
+
+        # Initialize components
+        self.command_parser = CommandParser()
+        self.action_executor = ActionExecutor()
+        self.bridge = CvBridge()
+
+        # Robot state
+        self.current_task = None
+        self.task_queue = []
+
+        self.get_logger().info('Language-Action Integration Node initialized')
+
+    def command_callback(self, msg):
+        """Process incoming natural language command"""
+        command = msg.data
+        self.get_logger().info(f'Received command: {command}')
+
+        try:
+            # Parse the command
+            parsed_command = self.command_parser.parse_command(command)
+
+            # Log parsed command
+            self.get_logger().info(f'Parsed command: {json.dumps(parsed_command, indent=2)}')
+
+            # Execute the action
+            success = self.action_executor.execute_action(parsed_command)
+
+            # Publish action status
+            status_msg = String()
+            status_msg.data = f"Command: {command}, Success: {success}, Action: {parsed_command.get('action', 'none')}"
+            self.action_status_pub.publish(status_msg)
+
+            if success:
+                self.get_logger().info(f'Command executed successfully: {command}')
+            else:
+                self.get_logger().error(f'Command execution failed: {command}')
+
+        except Exception as e:
+            self.get_logger().error(f'Error processing command: {e}')
+            status_msg = String()
+            status_msg.data = f"Error processing command: {str(e)}"
+            self.action_status_pub.publish(status_msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = LanguageActionNode()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info('Shutting down language-action node...')
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+### Context-Aware Command Interpreter
+
+Implementation of a context-aware system that interprets commands based on environmental context and robot state:
+
+```python
+#!/usr/bin/env python3
+"""
+Context-Aware Command Interpreter
+Demonstrates interpreting commands based on environmental context and robot state
+"""
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String, Bool
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import Pose, Point
+from vision_msgs.msg import Detection2DArray
+from cv_bridge import CvBridge
+import numpy as np
+import json
+from typing import Dict, List, Tuple, Optional
+import time
+
+class ContextManager:
+    """Manage environmental and robot context for command interpretation"""
+    def __init__(self):
+        self.robot_pose = Pose()
+        self.robot_state = 'idle'  # idle, moving, grasping, etc.
+        self.visible_objects = []
+        self.known_locations = {
+            'kitchen': (-2.0, 0.0, 0.0),
+            'living_room': (2.0, 0.0, 0.0),
+            'bedroom': (0.0, 2.0, 0.0),
+            'office': (0.0, -2.0, 0.0)
+        }
+        self.object_locations = {}  # object_name: location
+        self.robot_capabilities = ['move', 'grasp', 'turn', 'look']
+        self.context_history = []
+
+    def update_robot_pose(self, pose: Pose):
+        """Update robot's current pose"""
+        self.robot_pose = pose
+
+    def update_visible_objects(self, detections: List[Dict]):
+        """Update list of visible objects"""
+        self.visible_objects = detections
+
+    def update_object_location(self, obj_name: str, location: Tuple[float, float, float]):
+        """Update known location of an object"""
+        self.object_locations[obj_name] = location
+
+    def get_context(self) -> Dict:
+        """Get current context information"""
+        return {
+            'robot_pose': {
+                'x': self.robot_pose.position.x,
+                'y': self.robot_pose.position.y,
+                'z': self.robot_pose.position.z
+            },
+            'robot_state': self.robot_state,
+            'visible_objects': [obj['name'] for obj in self.visible_objects],
+            'known_locations': self.known_locations,
+            'object_locations': self.object_locations,
+            'capabilities': self.robot_capabilities
+        }
+
+    def resolve_ambiguous_reference(self, obj_name: str) -> Optional[str]:
+        """Resolve ambiguous object references based on context"""
+        # If exact match exists
+        if obj_name in self.object_locations:
+            return obj_name
+
+        # Look for similar objects in visible range
+        for obj in self.visible_objects:
+            if obj_name.lower() in obj['name'].lower():
+                return obj['name']
+
+        # Look for objects in known locations
+        for known_obj, location in self.object_locations.items():
+            if obj_name.lower() in known_obj.lower():
+                return known_obj
+
+        return None
+
+    def get_nearest_location(self, location_name: str) -> Optional[Tuple[float, float, float]]:
+        """Get coordinates for a named location"""
+        if location_name in self.known_locations:
+            return self.known_locations[location_name]
+        return None
+
+    def calculate_navigation_target(self, obj_name: str, relation: str) -> Optional[Tuple[float, float, float]]:
+        """Calculate navigation target based on object and spatial relation"""
+        # Resolve object reference
+        resolved_obj = self.resolve_ambiguous_reference(obj_name)
+        if not resolved_obj or resolved_obj not in self.object_locations:
+            return None
+
+        obj_location = self.object_locations[resolved_obj]
+
+        # Calculate target based on spatial relation
+        if relation in ['at', 'to']:
+            # Navigate to object location
+            return obj_location
+        elif relation in ['near', 'next to', 'beside']:
+            # Navigate close to object (1 meter away)
+            robot_pos = (self.robot_pose.position.x, self.robot_pose.position.y, self.robot_pose.position.z)
+            direction = np.array(obj_location) - np.array(robot_pos)
+            direction = direction / np.linalg.norm(direction)  # Normalize
+            target = np.array(obj_location) - 1.0 * direction  # 1m away from object
+            return tuple(target)
+        elif relation in ['left', 'right']:
+            # Navigate to left/right of object (simplified)
+            obj_x, obj_y, obj_z = obj_location
+            offset = 1.0 if relation == 'right' else -1.0
+            return (obj_x + offset, obj_y, obj_z)
+        else:
+            # Default to object location
+            return obj_location
+
+class ContextualCommandInterpreter:
+    """Interpret commands using environmental context"""
+    def __init__(self):
+        self.context_manager = ContextManager()
+        self.action_templates = {
+            'move': self.interpret_move_command,
+            'grasp': self.interpret_grasp_command,
+            'place': self.interpret_place_command,
+            'look': self.interpret_look_command
+        }
+
+    def interpret_command(self, command_struct: Dict) -> Dict:
+        """Interpret command using context"""
+        action = command_struct.get('action')
+        obj = command_struct.get('object')
+        relation = command_struct.get('relation')
+        location = command_struct.get('location')
+
+        if action in self.action_templates:
+            return self.action_templates[action](command_struct)
+        else:
+            return {'action': 'unknown', 'parameters': {}}
+
+    def interpret_move_command(self, command_struct: Dict) -> Dict:
+        """Interpret move command with context"""
+        obj = command_struct.get('object')
+        relation = command_struct.get('relation') or 'to'
+        location = command_struct.get('location')
+
+        if location:
+            # Move to named location
+            target = self.context_manager.get_nearest_location(location)
+            if target:
+                return {
+                    'action': 'navigate',
+                    'parameters': {
+                        'target_x': target[0],
+                        'target_y': target[1],
+                        'target_z': target[2]
+                    }
+                }
+
+        if obj:
+            # Move relative to object
+            target = self.context_manager.calculate_navigation_target(obj, relation)
+            if target:
+                return {
+                    'action': 'navigate',
+                    'parameters': {
+                        'target_x': target[0],
+                        'target_y': target[1],
+                        'target_z': target[2]
+                    }
+                }
+
+        # Default move action
+        return {
+            'action': 'move',
+            'parameters': {
+                'distance': 1.0,  # 1 meter forward
+                'direction': 'forward'
+            }
+        }
+
+    def interpret_grasp_command(self, command_struct: Dict) -> Dict:
+        """Interpret grasp command with context"""
+        obj = command_struct.get('object')
+
+        if obj:
+            # Resolve object reference
+            resolved_obj = self.context_manager.resolve_ambiguous_reference(obj)
+            if resolved_obj:
+                # Check if object is visible
+                visible_obj = next(
+                    (o for o in self.context_manager.visible_objects if o['name'] == resolved_obj),
+                    None
+                )
+
+                if visible_obj:
+                    return {
+                        'action': 'grasp',
+                        'parameters': {
+                            'object_name': resolved_obj,
+                            'object_position': visible_obj.get('position', [0, 0, 0]),
+                            'confidence': visible_obj.get('confidence', 0.0)
+                        }
+                    }
+
+        return {
+            'action': 'search_and_grasp',
+            'parameters': {
+                'target_object': obj or 'unknown'
+            }
+        }
+
+    def interpret_place_command(self, command_struct: Dict) -> Dict:
+        """Interpret place command with context"""
+        obj = command_struct.get('object')
+        location = command_struct.get('location') or command_struct.get('relation')
+
+        if location:
+            target = self.context_manager.get_nearest_location(location)
+            if target:
+                return {
+                    'action': 'navigate_and_place',
+                    'parameters': {
+                        'target_x': target[0],
+                        'target_y': target[1],
+                        'target_z': target[2],
+                        'object_to_place': obj or 'held_object'
+                    }
+                }
+
+        return {
+            'action': 'place',
+            'parameters': {
+                'object': obj or 'held_object',
+                'relative_position': 'current_position'
+            }
+        }
+
+    def interpret_look_command(self, command_struct: Dict) -> Dict:
+        """Interpret look command with context"""
+        obj = command_struct.get('object')
+
+        if obj:
+            # Look for specific object
+            resolved_obj = self.context_manager.resolve_ambiguous_reference(obj)
+            if resolved_obj:
+                # Check if object location is known
+                if resolved_obj in self.context_manager.object_locations:
+                    obj_location = self.context_manager.object_locations[resolved_obj]
+                    return {
+                        'action': 'look_at_location',
+                        'parameters': {
+                            'target_x': obj_location[0],
+                            'target_y': obj_location[1],
+                            'target_z': obj_location[2]
+                        }
+                    }
+
+        return {
+            'action': 'scan_environment',
+            'parameters': {
+                'target_object': obj or 'any_object'
+            }
+        }
+
+class ContextualLanguageActionNode(Node):
+    """ROS2 node for contextual language-action integration"""
+    def __init__(self):
+        super().__init__('contextual_language_action')
+
+        # Publishers and subscribers
+        self.command_sub = self.create_subscription(
+            String, '/contextual_command', self.command_callback, 10)
+        self.pose_sub = self.create_subscription(
+            Pose, '/robot_pose', self.pose_callback, 10)
+        self.detection_sub = self.create_subscription(
+            Detection2DArray, '/object_detections', self.detection_callback, 10)
+        self.cmd_vel_pub = self.create_publisher(Pose, '/navigation_goal', 10)
+        self.action_pub = self.create_publisher(String, '/executed_action', 10)
+        self.context_pub = self.create_publisher(String, '/current_context', 10)
+
+        # Initialize components
+        self.interpreter = ContextualCommandInterpreter()
+        self.bridge = CvBridge()
+
+        # Timer for context updates
+        self.context_timer = self.create_timer(1.0, self.publish_context)
+
+        self.get_logger().info('Contextual Language-Action Node initialized')
+
+    def command_callback(self, msg):
+        """Process contextual command"""
+        try:
+            # Parse command (assuming it's a JSON string with structured data)
+            command_data = json.loads(msg.data)
+            command_struct = command_data  # In a real system, this would come from NLP parser
+
+            # Interpret command using context
+            interpreted_action = self.interpreter.interpret_command(command_struct)
+
+            self.get_logger().info(f'Interpreted action: {interpreted_action}')
+
+            # Execute action (simplified)
+            self.execute_interpreted_action(interpreted_action)
+
+            # Publish executed action
+            action_msg = String()
+            action_msg.data = json.dumps(interpreted_action)
+            self.action_pub.publish(action_msg)
+
+        except json.JSONDecodeError:
+            # If not JSON, treat as simple string command
+            command_text = msg.data
+            self.get_logger().info(f'Received text command: {command_text}')
+            # In a real system, this would go through NLP parser first
+
+    def pose_callback(self, msg):
+        """Update robot pose in context"""
+        self.interpreter.context_manager.update_robot_pose(msg)
+
+    def detection_callback(self, msg):
+        """Update visible objects in context"""
+        detections = []
+        for detection in msg.detections:
+            obj_info = {
+                'name': detection.results[0].id if detection.results else 'unknown',
+                'confidence': detection.results[0].score if detection.results else 0.0,
+                'bbox': {
+                    'center_x': detection.bbox.center.x,
+                    'center_y': detection.bbox.center.y,
+                    'size_x': detection.bbox.size_x,
+                    'size_y': detection.bbox.size_y
+                }
+            }
+            detections.append(obj_info)
+
+        self.interpreter.context_manager.update_visible_objects(detections)
+
+    def execute_interpreted_action(self, action):
+        """Execute the interpreted action"""
+        action_type = action.get('action')
+        params = action.get('parameters', {})
+
+        if action_type == 'navigate':
+            # Publish navigation goal
+            goal_pose = Pose()
+            goal_pose.position.x = params.get('target_x', 0.0)
+            goal_pose.position.y = params.get('target_y', 0.0)
+            goal_pose.position.z = params.get('target_z', 0.0)
+            self.cmd_vel_pub.publish(goal_pose)
+
+            self.get_logger().info(f'Navigating to ({goal_pose.position.x}, {goal_pose.position.y})')
+
+    def publish_context(self):
+        """Publish current context"""
+        context = self.interpreter.context_manager.get_context()
+        context_msg = String()
+        context_msg.data = json.dumps(context, indent=2)
+        self.context_pub.publish(context_msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = ContextualLanguageActionNode()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info('Shutting down contextual language-action node...')
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+### Language-Guided Task Planning
+
+Implementation of task planning guided by natural language commands:
+
+```python
+#!/usr/bin/env python3
+"""
+Language-Guided Task Planning
+Demonstrates task planning guided by natural language commands
+"""
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+from action_msgs.msg import GoalStatus
+from geometry_msgs.msg import Pose, Point
+from sensor_msgs.msg import JointState
+import json
+from typing import List, Dict, Any, Optional, Callable
+from dataclasses import dataclass
+from enum import Enum
+import time
+import threading
+
+class TaskStatus(Enum):
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+
+@dataclass
+class TaskStep:
+    """Represents a single step in a task plan"""
+    action: str
+    parameters: Dict[str, Any]
+    precondition: Callable[[], bool]
+    postcondition: Callable[[], bool]
+    description: str
+
+class TaskPlanner:
+    """Plan tasks based on language commands"""
+    def __init__(self):
+        self.tasks = {}
+        self.current_task_id = 0
+        self.robot_state = {
+            'position': (0.0, 0.0, 0.0),
+            'orientation': 0.0,
+            'gripper_state': 'open',  # open, closed
+            'holding_object': None,
+            'battery_level': 100.0
+        }
+
+    def create_delivery_task(self, start_location: str, end_location: str, object_name: str) -> int:
+        """Create a delivery task plan"""
+        task_id = self.current_task_id
+        self.current_task_id += 1
+
+        # Define task steps
+        steps = [
+            TaskStep(
+                action='navigate',
+                parameters={'target_location': start_location},
+                precondition=lambda: self.robot_state['battery_level'] > 20,
+                postcondition=lambda: self._check_navigation_success(start_location),
+                description=f'Navigate to {start_location}'
+            ),
+            TaskStep(
+                action='grasp',
+                parameters={'object_name': object_name},
+                precondition=lambda: self._check_object_available(object_name, start_location),
+                postcondition=lambda: self.robot_state['holding_object'] == object_name,
+                description=f'Grasp {object_name}'
+            ),
+            TaskStep(
+                action='navigate',
+                parameters={'target_location': end_location},
+                precondition=lambda: self.robot_state['holding_object'] == object_name,
+                postcondition=lambda: self._check_navigation_success(end_location),
+                description=f'Navigate to {end_location} with {object_name}'
+            ),
+            TaskStep(
+                action='place',
+                parameters={'object_name': object_name},
+                precondition=lambda: self.robot_state['holding_object'] == object_name,
+                postcondition=lambda: self.robot_state['holding_object'] is None,
+                description=f'Place {object_name} at {end_location}'
+            )
+        ]
+
+        self.tasks[task_id] = {
+            'steps': steps,
+            'current_step': 0,
+            'status': TaskStatus.PENDING,
+            'start_time': time.time()
+        }
+
+        return task_id
+
+    def create_cleaning_task(self, room_name: str) -> int:
+        """Create a cleaning task plan"""
+        task_id = self.current_task_id
+        self.current_task_id += 1
+
+        # Define cleaning steps
+        steps = [
+            TaskStep(
+                action='navigate',
+                parameters={'target_location': f'{room_name}_entrance'},
+                precondition=lambda: self.robot_state['battery_level'] > 20,
+                postcondition=lambda: self._check_navigation_success(f'{room_name}_entrance'),
+                description=f'Navigate to {room_name} entrance'
+            ),
+            TaskStep(
+                action='clean_area',
+                parameters={'room_name': room_name},
+                precondition=lambda: True,
+                postcondition=lambda: self._check_cleaning_success(room_name),
+                description=f'Clean {room_name}'
+            ),
+            TaskStep(
+                action='return_to_base',
+                parameters={},
+                precondition=lambda: True,
+                postcondition=lambda: self._check_navigation_success('charging_station'),
+                description='Return to charging station'
+            )
+        ]
+
+        self.tasks[task_id] = {
+            'steps': steps,
+            'current_step': 0,
+            'status': TaskStatus.PENDING,
+            'start_time': time.time()
+        }
+
+        return task_id
+
+    def create_fetch_task(self, object_name: str, destination: str) -> int:
+        """Create a fetch task plan"""
+        task_id = self.current_task_id
+        self.current_task_id += 1
+
+        # Define fetch steps
+        steps = [
+            TaskStep(
+                action='find_object',
+                parameters={'object_name': object_name},
+                precondition=lambda: self.robot_state['battery_level'] > 30,
+                postcondition=lambda: self._check_object_found(object_name),
+                description=f'Find {object_name}'
+            ),
+            TaskStep(
+                action='grasp',
+                parameters={'object_name': object_name},
+                precondition=lambda: self._check_object_available(object_name, 'current'),
+                postcondition=lambda: self.robot_state['holding_object'] == object_name,
+                description=f'Grasp {object_name}'
+            ),
+            TaskStep(
+                action='navigate',
+                parameters={'target_location': destination},
+                precondition=lambda: self.robot_state['holding_object'] == object_name,
+                postcondition=lambda: self._check_navigation_success(destination),
+                description=f'Navigate to {destination} with {object_name}'
+            ),
+            TaskStep(
+                action='place',
+                parameters={'object_name': object_name},
+                precondition=lambda: self.robot_state['holding_object'] == object_name,
+                postcondition=lambda: self.robot_state['holding_object'] is None,
+                description=f'Place {object_name} at {destination}'
+            )
+        ]
+
+        self.tasks[task_id] = {
+            'steps': steps,
+            'current_step': 0,
+            'status': TaskStatus.PENDING,
+            'start_time': time.time()
+        }
+
+        return task_id
+
+    def execute_task_step(self, task_id: int) -> bool:
+        """Execute the current step of a task"""
+        if task_id not in self.tasks:
+            return False
+
+        task = self.tasks[task_id]
+        if task['current_step'] >= len(task['steps']):
+            task['status'] = TaskStatus.SUCCESS
+            return True
+
+        step = task['steps'][task['current_step']]
+
+        # Check precondition
+        if not step.precondition():
+            task['status'] = TaskStatus.FAILED
+            return False
+
+        # Execute action (simplified - in real implementation, this would call ROS2 actions/services)
+        success = self._execute_action(step.action, step.parameters)
+
+        if success:
+            # Check postcondition
+            if step.postcondition():
+                task['current_step'] += 1
+                if task['current_step'] >= len(task['steps']):
+                    task['status'] = TaskStatus.SUCCESS
+                else:
+                    task['status'] = TaskStatus.RUNNING
+                return True
+            else:
+                task['status'] = TaskStatus.FAILED
+                return False
+        else:
+            task['status'] = TaskStatus.FAILED
+            return False
+
+    def _execute_action(self, action: str, parameters: Dict[str, Any]) -> bool:
+        """Execute a specific action (simplified implementation)"""
+        print(f"Executing action: {action} with parameters: {parameters}")
+
+        # Simulate action execution
+        time.sleep(0.5)  # Simulate execution time
+
+        # Update robot state based on action
+        if action == 'grasp':
+            obj_name = parameters.get('object_name')
+            if obj_name:
+                self.robot_state['gripper_state'] = 'closed'
+                self.robot_state['holding_object'] = obj_name
+        elif action == 'place':
+            self.robot_state['gripper_state'] = 'open'
+            self.robot_state['holding_object'] = None
+        elif action == 'navigate':
+            target = parameters.get('target_location')
+            if target:
+                # Update position (simplified)
+                self.robot_state['position'] = self._get_location_coordinates(target)
+
+        return True  # Simulate success
+
+    def _get_location_coordinates(self, location_name: str) -> tuple:
+        """Get coordinates for a named location (simplified)"""
+        locations = {
+            'kitchen': (2.0, 0.0, 0.0),
+            'living_room': (-2.0, 0.0, 0.0),
+            'bedroom': (0.0, 2.0, 0.0),
+            'office': (0.0, -2.0, 0.0),
+            'charging_station': (0.0, 0.0, 0.0)
+        }
+        return locations.get(location_name, (0.0, 0.0, 0.0))
+
+    def _check_navigation_success(self, location: str) -> bool:
+        """Check if navigation was successful (simplified)"""
+        target_pos = self._get_location_coordinates(location)
+        current_pos = self.robot_state['position']
+        distance = sum((a - b) ** 2 for a, b in zip(current_pos, target_pos)) ** 0.5
+        return distance < 0.5  # Within 0.5m
+
+    def _check_object_available(self, obj_name: str, location: str) -> bool:
+        """Check if object is available at location (simplified)"""
+        return True  # Simplified check
+
+    def _check_object_found(self, obj_name: str) -> bool:
+        """Check if object was found (simplified)"""
+        return True  # Simplified check
+
+    def _check_cleaning_success(self, room_name: str) -> bool:
+        """Check if cleaning was successful (simplified)"""
+        return True  # Simplified check
+
+class LanguageTaskPlannerNode(Node):
+    """ROS2 node for language-guided task planning"""
+    def __init__(self):
+        super().__init__('language_task_planner')
+
+        # Publishers and subscribers
+        self.command_sub = self.create_subscription(
+            String, '/language_task_command', self.command_callback, 10)
+        self.task_status_pub = self.create_publisher(String, '/task_status', 10)
+        self.action_pub = self.create_publisher(String, '/planned_action', 10)
+
+        # Initialize planner
+        self.planner = TaskPlanner()
+
+        # Timer for task execution
+        self.task_timer = self.create_timer(0.1, self.execute_current_tasks)
+
+        self.get_logger().info('Language Task Planner Node initialized')
+
+    def command_callback(self, msg):
+        """Process language command to create tasks"""
+        try:
+            # Parse command (assuming JSON format)
+            command_data = json.loads(msg.data)
+            command_type = command_data.get('type')
+            parameters = command_data.get('parameters', {})
+
+            task_id = None
+
+            if command_type == 'delivery':
+                task_id = self.planner.create_delivery_task(
+                    parameters.get('start_location', 'kitchen'),
+                    parameters.get('end_location', 'living_room'),
+                    parameters.get('object_name', 'cup')
+                )
+                self.get_logger().info(f'Created delivery task: {task_id}')
+            elif command_type == 'cleaning':
+                task_id = self.planner.create_cleaning_task(
+                    parameters.get('room_name', 'living_room')
+                )
+                self.get_logger().info(f'Created cleaning task: {task_id}')
+            elif command_type == 'fetch':
+                task_id = self.planner.create_fetch_task(
+                    parameters.get('object_name', 'book'),
+                    parameters.get('destination', 'table')
+                )
+                self.get_logger().info(f'Created fetch task: {task_id}')
+            else:
+                self.get_logger().error(f'Unknown command type: {command_type}')
+                return
+
+            if task_id is not None:
+                # Publish task creation
+                status_msg = String()
+                status_msg.data = json.dumps({
+                    'task_id': task_id,
+                    'status': 'created',
+                    'command': command_data
+                })
+                self.task_status_pub.publish(status_msg)
+
+        except json.JSONDecodeError:
+            self.get_logger().error(f'Invalid JSON command: {msg.data}')
+        except Exception as e:
+            self.get_logger().error(f'Error processing command: {e}')
+
+    def execute_current_tasks(self):
+        """Execute current tasks"""
+        for task_id, task_info in self.planner.tasks.items():
+            if task_info['status'] in [TaskStatus.PENDING, TaskStatus.RUNNING]:
+                success = self.planner.execute_task_step(task_id)
+
+                # Publish task status
+                status_msg = String()
+                status_msg.data = json.dumps({
+                    'task_id': task_id,
+                    'status': task_info['status'].value,
+                    'current_step': task_info['current_step'],
+                    'total_steps': len(task_info['steps'])
+                })
+                self.task_status_pub.publish(status_msg)
+
+                if task_info['status'] == TaskStatus.SUCCESS:
+                    self.get_logger().info(f'Task {task_id} completed successfully')
+                elif task_info['status'] == TaskStatus.FAILED:
+                    self.get_logger().error(f'Task {task_id} failed')
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = LanguageTaskPlannerNode()
+
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        node.get_logger().info('Shutting down language task planner node...')
+    finally:
+        node.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+## Practical Examples
+
+### Human-Robot Command Interface
+
+Students implement a complete human-robot command interface that can interpret natural language and execute robotic actions.
+
+**Objectives:**
+- Implement natural language processing pipeline
+- Create context-aware command interpretation
+- Develop action execution framework
+- Test with human users in realistic scenarios
+
+**Required Components:**
+- Natural language processing tools
+- Robot control interface
+- Context management system
+- User interface for command input
+- Robot platform with mobility and manipulation
+
+**Evaluation Criteria:**
+- Command interpretation accuracy
+- Action execution success rate
+- User satisfaction with interface
+- System robustness to varied commands
+
+### Context-Aware Navigation System
+
+Students develop a navigation system that interprets location references in natural language commands.
+
+**Objectives:**
+- Implement spatial language understanding
+- Create map-based location resolution
+- Develop navigation planning from language
+- Validate performance in real environment
+
+**Required Components:**
+- Robot with navigation capabilities
+- Environmental mapping system
+- Natural language processing tools
+- Location recognition algorithms
+- Path planning system
+
+**Evaluation Criteria:**
+- Location reference resolution accuracy
+- Navigation success rate
+- Path efficiency
+- Adaptation to environment changes
+
+### Task Planning from Language
+
+Students create a system that can decompose complex language commands into executable task sequences.
+
+**Objectives:**
+- Implement task decomposition algorithms
+- Create action planning framework
+- Develop precondition/postcondition checking
+- Validate task completion success
+
+**Required Components:**
+- Task planning algorithms
+- Action execution framework
+- State monitoring system
+- Language parsing tools
+- Robot with multiple capabilities
+
+**Evaluation Criteria:**
+- Task decomposition accuracy
+- Plan execution success rate
+- Handling of task failures
+- Efficiency of task completion
+
+## Summary
+
+Chapter 20 covered language-action integration, focusing on connecting natural language commands to robotic actions. Students learned about natural language processing for robotics, context-aware command interpretation, and task planning guided by language. The chapter emphasized creating robust systems that can handle ambiguous instructions and execute complex tasks described in natural language, enabling more intuitive human-robot interaction.
+
+## Quiz
+
+1. What is the main purpose of language-action integration in robotics?
+   - A: To eliminate the need for programming
+   - B: To enable robots to understand and execute natural language commands
+   - C: To make robots speak human languages
+   - D: To reduce robot hardware requirements
+
+   **Answer: B** - Language-action integration enables robots to understand natural language commands and execute corresponding physical actions.
+
+2. What does semantic parsing do in language-action systems?
+   - A: Converts language to structured action representations
+   - B: Makes the robot speak more clearly
+   - C: Improves robot vision
+   - D: Reduces power consumption
+
+   **Answer: A** - Semantic parsing converts natural language commands into structured action representations that robots can execute.
+
+3. Why is context awareness important in language-action systems?
+   - A: It makes robots faster
+   - B: It helps resolve ambiguous references based on environment
+   - C: It reduces hardware costs
+   - D: It eliminates the need for sensors
+
+   **Answer: B** - Context awareness helps resolve ambiguous language references based on the current environmental context.
+
+4. What is ambiguity resolution in language-action systems?
+   - A: Making commands more confusing
+   - B: Handling ambiguous or incomplete instructions using context
+   - C: Adding more sensors to robots
+   - D: Making robots speak multiple languages
+
+   **Answer: B** - Ambiguity resolution handles ambiguous or incomplete instructions by using environmental context and knowledge.
+
+5. What does multimodal integration mean in language-action systems?
+   - A: Using multiple programming languages
+   - B: Combining language with visual and spatial information
+   - C: Using multiple robots at once
+   - D: Making robots move in multiple ways
+
+   **Answer: B** - Multimodal integration combines language understanding with visual and spatial information for better command interpretation.
+
+## Learning Outcomes
+
+After completing this chapter, students will be able to:
+- Implement multimodal learning systems
+- Integrate vision, language, and action components
+- Develop interactive learning algorithms
+- Create human-robot interaction systems
+
+## Prerequisites
+
+- Basic understanding of Python programming
+- Fundamentals of linear algebra and calculus
+- Basic knowledge of robotics concepts
+- Introduction to machine learning concepts
+- Completion of Module 0 (Introduction and Foundations)
+- Completion of Chapter 01 (Physical AI Basics)
+- Completion of Chapter 03 (ROS2 Nodes, Topics & Services)
+- Completion of Chapter 16 (Vision-Language-Action Concepts)
+
+## Estimated Duration
+
+5 hours

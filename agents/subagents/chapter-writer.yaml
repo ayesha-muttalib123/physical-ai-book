@@ -1,0 +1,49 @@
+# Chapter Writer Subagent Configuration
+name: "chapter-writer"
+role: "writes chapters from outlines"
+description: "A specialized subagent that generates complete textbook chapters based on provided outlines and constitutional requirements"
+version: "1.0.0"
+constraints:
+  - Follow chapter structure requirements from constitution
+  - Use only approved content from course materials
+  - Never invent new information
+  - Maintain consistency with textbook style
+  - Include all required sections
+
+# Chapter generation parameters
+chapter_generation:
+  required_elements:
+    - overview_section
+    - why_it_matters_section
+    - key_concepts_section
+    - code_examples_section
+    - practical_examples_section
+    - summary_section
+    - quiz_section
+  default_tone: "educational_professional"
+  target_length: "comprehensive_but_concise"
+  technical_accuracy_required: true
+
+# Content sources
+content_sources:
+  - course_outline: "primary_source"
+  - constitution_requirements: "mandatory"
+  - previous_chapters: "reference_for_consistency"
+  - technology_documentation: "for_accuracy"
+
+# Technology integration
+technology_integration:
+  ros2_content_inclusion: true
+  gazebo_examples_required: true
+  nvidia_isaac_content: true
+  code_example_standards:
+    - "follow_official_documentation"
+    - "include_explanations"
+    - "show_practical_applications"
+
+# Quality assurance
+quality_assurance:
+  - structure_compliance_check: true
+  - technical_accuracy_verification: true
+  - consistency_with_outline: true
+  - constitutional_compliance: true

@@ -1,0 +1,203 @@
+---
+book_id: "physical-ai-humanoid-robotics"
+title: "Physical AI & Humanoid Robotics"
+subtitle: "From Digital Agents to Real-World Humanoids"
+version: "1.0.0"
+author: "Ayesha Muttalib"
+description: "A comprehensive textbook covering the fundamentals of Physical AI and Humanoid Robotics, exploring the intersection of artificial intelligence and physical systems. This book covers embodied intelligence, ROS2, Gazebo, NVIDIA Isaac, humanoid locomotion, perception, and practical applications in robotics."
+
+target_audience:
+  - "Computer Science students"
+  - "Robotics engineers"
+  - "AI researchers"
+  - "Graduate students in AI and Robotics"
+  - "Practitioners interested in embodied AI"
+
+prerequisites:
+  - "Basic understanding of Python programming"
+  - "Fundamentals of linear algebra and calculus"
+  - "Basic knowledge of robotics concepts"
+  - "Introduction to machine learning concepts"
+
+learning_objectives:
+  - "Understand the principles of Physical AI and embodied intelligence"
+  - "Learn to implement ROS2 nodes for robot control and sensing"
+  - "Develop simulation environments using Gazebo and NVIDIA Isaac"
+  - "Implement humanoid locomotion algorithms"
+  - "Design perception systems for physical AI applications"
+  - "Build RAG chatbots for interactive learning experiences"
+  - "Integrate authentication and personalization in educational platforms"
+
+course_outline:
+  -
+    chapter_id: "00-introduction"
+    title: "Introduction to Physical AI & Humanoid Robotics"
+    topics:
+      - "Definition and scope of Physical AI"
+      - "Historical context and evolution"
+      - "Applications and impact"
+      - "Challenges and opportunities"
+    estimated_duration: "2 hours"
+  -
+    chapter_id: "01-physical-ai-basics"
+    title: "Physical AI Basics"
+    topics:
+      - "Embodied cognition"
+      - "Sensorimotor learning"
+      - "Perception-action loops"
+      - "Environmental affordances"
+      - "Morphological computation"
+    estimated_duration: "4 hours"
+  -
+    chapter_id: "02-sensing-and-embodied-intelligence"
+    title: "Sensing and Embodied Intelligence"
+    topics:
+      - "Sensor types and integration"
+      - "Multi-modal perception"
+      - "Embodied learning algorithms"
+      - "Real-world sensing challenges"
+    estimated_duration: "5 hours"
+  -
+    chapter_id: "03-ros2-nervous-system"
+    title: "ROS2: The Robot's Nervous System"
+    topics:
+      - "ROS2 architecture and concepts"
+      - "Nodes, topics, services, actions"
+      - "Parameter management"
+      - "ROS2 packages and tools"
+      - "ROS2 for multi-robot systems"
+    estimated_duration: "6 hours"
+  -
+    chapter_id: "04-digital-twin-gazebo-unity"
+    title: "Digital Twin: Gazebo & Unity"
+    topics:
+      - "Simulation environments overview"
+      - "Gazebo physics engine"
+      - "Unity for robotics simulation"
+      - "Simulation to reality transfer"
+      - "Testing and validation in simulation"
+    estimated_duration: "6 hours"
+  -
+    chapter_id: "05-nvidia-isaac-brain"
+    title: "NVIDIA Isaac: The Robot's Brain"
+    topics:
+      - "Isaac Sim overview"
+      - "Isaac ROS integration"
+      - "AI perception pipelines"
+      - "Robot simulation and training"
+      - "Deployment to hardware"
+    estimated_duration: "6 hours"
+  -
+    chapter_id: "06-vision-language-action"
+    title: "Vision-Language-Action Models"
+    topics:
+      - "Multimodal learning"
+      - "Vision-language models for robotics"
+      - "Action recognition and generation"
+      - "Embodied AI models"
+      - "Real-world applications"
+    estimated_duration: "5 hours"
+  -
+    chapter_id: "07-humanoid-locomotion"
+    title: "Humanoid Locomotion"
+    topics:
+      - "Bipedal walking algorithms"
+      - "Balance and stability control"
+      - "Motion planning for humanoid robots"
+      - "Dynamic movement generation"
+      - "Terrain adaptation"
+    estimated_duration: "6 hours"
+  -
+    chapter_id: "08-rag-chatbot-integration"
+    title: "RAG Chatbot Integration"
+    topics:
+      - "Retrieval-Augmented Generation concepts"
+      - "Vector databases and embeddings"
+      - "Qdrant cloud integration"
+      - "FastAPI backend development"
+      - "Question answering systems"
+    estimated_duration: "5 hours"
+  -
+    chapter_id: "09-auth-personalization"
+    title: "Authentication & Personalization"
+    topics:
+      - "Better-Auth integration"
+      - "User profiles and preferences"
+      - "Personalized learning paths"
+      - "Content adaptation"
+      - "Progress tracking"
+    estimated_duration: "4 hours"
+  -
+    chapter_id: "10-capstone-project"
+    title: "Capstone Project: Complete Physical AI System"
+    topics:
+      - "Integration of all components"
+      - "End-to-end system development"
+      - "Testing and validation"
+      - "Deployment considerations"
+      - "Documentation and presentation"
+    estimated_duration: "8 hours"
+
+technical_requirements:
+  software:
+    - "ROS2 Humble Hawksbill"
+    - "Gazebo Garden"
+    - "NVIDIA Isaac Sim"
+    - "Python 3.8+"
+    - "FastAPI"
+    - "Qdrant Cloud"
+    - "Better-Auth"
+    - "Docusaurus"
+  hardware:
+    - "Computer with ROS2 compatibility"
+    - "GPU recommended for Isaac Sim"
+    - "Internet connection for cloud services"
+  cloud_services:
+    - "Qdrant Cloud Free Tier"
+    - "Neon Serverless Postgres"
+    - "GitHub Pages (for deployment)"
+
+pedagogical_approach:
+  - "Hands-on learning with practical examples"
+  - "Theory followed by implementation"
+  - "Progressive complexity from basic to advanced concepts"
+  - "Integration of multiple technologies"
+  - "Real-world applications and case studies"
+  - "Interactive elements and quizzes"
+  - "Capstone project for comprehensive learning"
+
+assessment_methods:
+  - "Chapter quizzes and exercises"
+  - "Practical implementation tasks"
+  - "Simulation-based projects"
+  - "Capstone project evaluation"
+  - "Peer review and collaboration"
+
+accessibility_features:
+  - "Urdu translation toggle"
+  - "Content depth adjustment"
+  - "Multiple learning modalities"
+  - "Progress tracking"
+  - "Personalized learning paths"
+
+integration_with_rag:
+  - "Book content as RAG knowledge base"
+  - "Interactive Q&A system"
+  - "Context-aware responses"
+  - "Cross-referencing between chapters"
+  - "Code example explanations"
+
+personalization_features:
+  - "User background assessment"
+  - "Adaptive content delivery"
+  - "Customized learning paths"
+  - "Progress-based recommendations"
+  - "Skill level adjustments"
+
+compliance_standards:
+  - "Follows hackathon requirements"
+  - "Uses only approved technologies"
+  - "No hallucinated commands or APIs"
+  - "Adheres to ethical AI principles"
+  - "Maintains technical accuracy"
+...

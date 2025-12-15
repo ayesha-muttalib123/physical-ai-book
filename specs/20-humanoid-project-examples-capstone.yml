@@ -1,0 +1,1440 @@
+---
+chapter_id: "20-humanoid-project-examples-capstone"
+title: "Humanoid Project Examples & Capstone"
+module_id: "M5-vla-humanoids"
+module_title: "Vision-Language-Action & Humanoids"
+overview: "This capstone chapter brings together all the concepts learned throughout the Vision-Language-Action & Humanoids module. Students will work on comprehensive humanoid robot projects that integrate vision, language, and action capabilities. The chapter provides detailed project examples, implementation guidelines, and evaluation criteria for creating sophisticated humanoid robots that can perceive their environment, understand natural language commands, and execute complex tasks. Students will develop end-to-end systems that demonstrate the full potential of VLA-enabled humanoid robots."
+why_it_matters: "Capstone projects are essential for synthesizing knowledge from multiple domains and applying it to real-world challenges. This chapter provides students with the opportunity to integrate all the concepts learned about vision-language-action systems and humanoid control into comprehensive projects. These projects prepare students for advanced robotics research and development by requiring them to solve complex, multi-faceted problems that mirror real-world robotics applications."
+key_concepts:
+  - "System Integration: Combining vision, language, and action components"
+  - "Project Planning: Designing and managing complex robotics projects"
+  - "Multi-Modal Fusion: Integrating information from different sensory modalities"
+  - "Human-Robot Interaction: Creating intuitive interfaces for human operators"
+  - "Real-World Deployment: Addressing challenges of deploying in actual environments"
+  - "Performance Evaluation: Measuring success across multiple dimensions"
+  - "Safety Considerations: Ensuring safe operation of humanoid robots"
+  - "Scalability: Designing systems that can grow and adapt"
+
+code_examples:
+  -
+    title: "Integrated Humanoid Assistant System"
+    description: "Complete integrated system combining VLA capabilities with humanoid control"
+    language: "python"
+    framework: "ROS2 with PyTorch and Robotics Libraries"
+    code: |
+      #!/usr/bin/env python3
+      """
+      Integrated Humanoid Assistant System
+      Complete system integrating vision, language, and action capabilities
+      """
+      import rclpy
+      from rclpy.node import Node
+      from sensor_msgs.msg import Image, JointState, Imu
+      from geometry_msgs.msg import Twist, Pose, Point
+      from std_msgs.msg import String, Bool, Float64
+      from vision_msgs.msg import Detection2DArray
+      from cv_bridge import CvBridge
+      import torch
+      import torch.nn as nn
+      import numpy as np
+      import spacy
+      import cv2
+      import math
+      from typing import Dict, List, Tuple, Optional
+      import threading
+      import queue
+      import time
+
+      class VisionSystem:
+          """Vision processing system for the humanoid robot"""
+          def __init__(self):
+              self.bridge = CvBridge()
+              self.object_detections = []
+              self.current_image = None
+              self.feature_points = []
+
+          def process_image(self, image_msg):
+              """Process incoming camera image"""
+              try:
+                  cv_image = self.bridge.imgmsg_to_cv2(image_msg, desired_encoding='bgr8')
+                  self.current_image = cv_image
+
+                  # Perform object detection (simplified - in real implementation, use actual detector)
+                  self.object_detections = self.detect_objects(cv_image)
+
+                  # Extract features for tracking
+                  self.feature_points = self.extract_features(cv_image)
+
+                  return True
+              except Exception as e:
+                  print(f"Vision processing error: {e}")
+                  return False
+
+          def detect_objects(self, image):
+              """Detect objects in the image (simplified implementation)"""
+              # In real implementation, this would use a trained object detection model
+              # For simulation, return some dummy detections
+              height, width = image.shape[:2]
+              detections = []
+
+              # Simulate some detections
+              for i in range(3):
+                  detection = {
+                      'name': f'object_{i}',
+                      'confidence': np.random.uniform(0.7, 0.99),
+                      'bbox': {
+                          'x': np.random.randint(0, width - 50),
+                          'y': np.random.randint(0, height - 50),
+                          'width': np.random.randint(30, 80),
+                          'height': np.random.randint(30, 80)
+                      },
+                      'center': (
+                          np.random.randint(0, width),
+                          np.random.randint(0, height)
+                      )
+                  }
+                  detections.append(detection)
+
+              return detections
+
+          def extract_features(self, image):
+              """Extract visual features for tracking"""
+              gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+              # Use ORB for feature extraction
+              orb = cv2.ORB_create(nfeatures=200)
+              keypoints, descriptors = orb.detectAndCompute(gray, None)
+              return {'keypoints': keypoints, 'descriptors': descriptors}
+
+      class LanguageSystem:
+          """Natural language processing system"""
+          def __init__(self):
+              # Load spaCy model for NLP
+              try:
+                  self.nlp = spacy.load("en_core_web_sm")
+              except OSError:
+                  print("spaCy model not found. Install with: python -m spacy download en_core_web_sm")
+                  self.nlp = None
+
+              # Define command vocabulary
+              self.action_keywords = {
+                  'move': ['go', 'move', 'walk', 'navigate', 'approach'],
+                  'grasp': ['grasp', 'grab', 'pick up', 'take', 'hold'],
+                  'place': ['place', 'put', 'set', 'release'],
+                  'look': ['look', 'see', 'find', 'locate', 'search'],
+                  'turn': ['turn', 'rotate', 'face', 'orient'],
+                  'follow': ['follow', 'accompany', 'come with']
+              }
+
+          def parse_command(self, command: str) -> Dict:
+              """Parse natural language command"""
+              if self.nlp is None:
+                  return self.fallback_parse(command)
+
+              doc = self.nlp(command.lower())
+
+              # Extract action
+              action = self.extract_action(doc)
+
+              # Extract object
+              obj = self.extract_object(doc)
+
+              # Extract location/direction
+              location = self.extract_location(doc)
+
+              # Extract spatial relations
+              relation = self.extract_spatial_relation(doc)
+
+              return {
+                  'command': command,
+                  'action': action,
+                  'object': obj,
+                  'location': location,
+                  'relation': relation,
+                  'entities': [(ent.text, ent.label_) for ent in doc.ents]
+              }
+
+          def fallback_parse(self, command: str) -> Dict:
+              """Fallback parser if spaCy is not available"""
+              command_lower = command.lower()
+
+              # Simple keyword matching
+              action = None
+              for action_type, keywords in self.action_keywords.items():
+                  for keyword in keywords:
+                      if keyword in command_lower:
+                          action = action_type
+                          break
+                      if action:
+                          break
+
+              return {
+                  'command': command,
+                  'action': action,
+                  'object': None,
+                  'location': None,
+                  'relation': None,
+                  'entities': []
+              }
+
+          def extract_action(self, doc) -> Optional[str]:
+              """Extract action from parsed document"""
+              for token in doc:
+                  if token.pos_ in ['VERB', 'AUX'] and not token.is_stop:
+                      for action_type, keywords in self.action_keywords.items():
+                          if any(keyword in [token.text, token.lemma_] for keyword in keywords):
+                              return action_type
+              return None
+
+          def extract_object(self, doc) -> Optional[str]:
+              """Extract object from parsed document"""
+              for token in doc:
+                  if token.pos_ in ['NOUN', 'PROPN']:
+                      return token.text
+              return None
+
+          def extract_location(self, doc) -> Optional[str]:
+              """Extract location from parsed document"""
+              for ent in doc.ents:
+                  if ent.label_ in ['LOC', 'GPE', 'FAC']:
+                      return ent.text
+              return None
+
+          def extract_spatial_relation(self, doc) -> Optional[str]:
+              """Extract spatial relation from parsed document"""
+              spatial_words = ['to', 'toward', 'at', 'on', 'in', 'under', 'over', 'near', 'next to', 'beside', 'left', 'right', 'front', 'back']
+              for token in doc:
+                  if token.text in spatial_words:
+                      return token.text
+              return None
+
+      class ActionSystem:
+          """Action execution system for humanoid robot"""
+          def __init__(self):
+              self.current_pose = np.array([0.0, 0.0, 0.0])  # x, y, theta
+              self.holding_object = None
+              self.navigation_target = None
+              self.action_queue = queue.Queue()
+              self.is_moving = False
+
+          def execute_action(self, parsed_command: Dict):
+              """Execute action based on parsed command"""
+              action_type = parsed_command.get('action')
+              obj = parsed_command.get('object')
+              location = parsed_command.get('location')
+
+              if action_type == 'move':
+                  return self.execute_move(location or obj)
+              elif action_type == 'grasp':
+                  return self.execute_grasp(obj)
+              elif action_type == 'place':
+                  return self.execute_place()
+              elif action_type == 'look':
+                  return self.execute_look(obj)
+              elif action_type == 'turn':
+                  return self.execute_turn(parsed_command.get('relation'))
+              else:
+                  print(f"Unknown action: {action_type}")
+                  return False
+
+          def execute_move(self, target):
+              """Execute move action"""
+              print(f"Moving toward {target}")
+              # In real implementation, this would generate navigation commands
+              self.navigation_target = target
+              return True
+
+          def execute_grasp(self, obj):
+              """Execute grasp action"""
+              print(f"Grasping {obj}")
+              self.holding_object = obj
+              return True
+
+          def execute_place(self):
+              """Execute place action"""
+              if self.holding_object:
+                  print(f"Placing {self.holding_object}")
+                  self.holding_object = None
+                  return True
+              return False
+
+          def execute_look(self, obj):
+              """Execute look action"""
+              print(f"Looking for {obj}")
+              return True
+
+          def execute_turn(self, direction):
+              """Execute turn action"""
+              print(f"Turning {direction or 'around'}")
+              return True
+
+      class HumanoidController:
+          """High-level controller managing the humanoid robot"""
+          def __init__(self):
+              self.vision_system = VisionSystem()
+              self.language_system = LanguageSystem()
+              self.action_system = ActionSystem()
+              self.system_state = 'idle'  # idle, processing, executing, error
+              self.safety_enabled = True
+
+          def process_command(self, command: str):
+              """Process a natural language command"""
+              print(f"Processing command: {command}")
+
+              # Parse command
+              parsed_command = self.language_system.parse_command(command)
+
+              # Execute action
+              success = self.action_system.execute_action(parsed_command)
+
+              if success:
+                  self.system_state = 'executing'
+                  print(f"Command executed: {command}")
+              else:
+                  self.system_state = 'error'
+                  print(f"Command failed: {command}")
+
+              return success
+
+          def update_vision(self, image_msg):
+              """Update vision system with new image"""
+              return self.vision_system.process_image(image_msg)
+
+          def get_system_status(self):
+              """Get current system status"""
+              return {
+                  'state': self.system_state,
+                  'holding_object': self.action_system.holding_object,
+                  'navigation_target': self.action_system.navigation_target,
+                  'safety_enabled': self.safety_enabled
+              }
+
+      class IntegratedHumanoidNode(Node):
+          """ROS2 node for the integrated humanoid system"""
+          def __init__(self):
+              super().__init__('integrated_humanoid_assistant')
+
+              # Publishers and subscribers
+              self.image_sub = self.create_subscription(
+                  Image, '/camera/rgb/image_raw', self.image_callback, 10)
+              self.command_sub = self.create_subscription(
+                  String, '/humanoid/command', self.command_callback, 10)
+              self.joint_state_sub = self.create_subscription(
+                  JointState, '/joint_states', self.joint_state_callback, 10)
+              self.imu_sub = self.create_subscription(
+                  Imu, '/imu/data', self.imu_callback, 10)
+
+              self.cmd_vel_pub = self.create_publisher(Twist, '/cmd_vel', 10)
+              self.joint_cmd_pub = self.create_publisher(JointState, '/joint_commands', 10)
+              self.status_pub = self.create_publisher(String, '/humanoid/status', 10)
+              self.detection_pub = self.create_publisher(Detection2DArray, '/object_detections', 10)
+
+              # Initialize integrated system
+              self.humanoid_controller = HumanoidController()
+              self.bridge = CvBridge()
+
+              # Threading for processing
+              self.processing_lock = threading.Lock()
+              self.command_queue = queue.Queue()
+
+              # Timer for system updates
+              self.system_timer = self.create_timer(0.1, self.system_update_callback)
+
+              self.get_logger().info('Integrated Humanoid Assistant initialized')
+
+          def image_callback(self, msg):
+              """Process incoming camera image"""
+              with self.processing_lock:
+                  success = self.humanoid_controller.update_vision(msg)
+                  if not success:
+                      self.get_logger().error('Vision processing failed')
+
+          def command_callback(self, msg):
+              """Process incoming command"""
+              command = msg.data
+              self.get_logger().info(f'Received command: {command}')
+
+              # Add command to processing queue
+              self.command_queue.put(command)
+
+          def joint_state_callback(self, msg):
+              """Process joint state updates"""
+              # Update controller with joint information
+              pass
+
+          def imu_callback(self, msg):
+              """Process IMU data for balance"""
+              # Use IMU data for balance control
+              pass
+
+          def system_update_callback(self):
+              """Main system update loop"""
+              # Process any queued commands
+              while not self.command_queue.empty():
+                  try:
+                      command = self.command_queue.get_nowait()
+                      success = self.humanoid_controller.process_command(command)
+
+                      # Publish system status
+                      status = self.humanoid_controller.get_system_status()
+                      status_msg = String()
+                      status_msg.data = str(status)
+                      self.status_pub.publish(status_msg)
+
+                  except queue.Empty:
+                      break
+
+              # Publish system status periodically
+              status = self.humanoid_controller.get_system_status()
+              status_msg = String()
+              status_msg.data = str(status)
+              self.status_pub.publish(status_msg)
+
+          def publish_joint_commands(self, joint_positions: Dict[str, float]):
+              """Publish joint commands to robot"""
+              joint_state = JointState()
+              joint_state.header.stamp = self.get_clock().now().to_msg()
+              joint_state.header.frame_id = 'base_link'
+
+              for name, position in joint_positions.items():
+                  joint_state.name.append(name)
+                  joint_state.position.append(position)
+                  joint_state.velocity.append(0.0)
+                  joint_state.effort.append(0.0)
+
+              self.joint_cmd_pub.publish(joint_state)
+
+      def main(args=None):
+          rclpy.init(args=args)
+          node = IntegratedHumanoidNode()
+
+          try:
+              rclpy.spin(node)
+          except KeyboardInterrupt:
+              node.get_logger().info('Shutting down integrated humanoid assistant...')
+          finally:
+              node.destroy_node()
+              rclpy.shutdown()
+
+      if __name__ == '__main__':
+          main()
+
+  -
+    title: "Humanoid Capstone Project Framework"
+    description: "Framework for implementing comprehensive humanoid capstone projects"
+    language: "python"
+    framework: "ROS2 with Project Management Tools"
+    code: |
+      #!/usr/bin/env python3
+      """
+      Humanoid Capstone Project Framework
+      Framework for implementing comprehensive humanoid capstone projects
+      """
+      import rclpy
+      from rclpy.node import Node
+      from std_msgs.msg import String, Bool, Float64
+      from sensor_msgs.msg import Image, JointState
+      from geometry_msgs.msg import Pose, Twist
+      from action_msgs.msg import GoalStatus
+      import json
+      import threading
+      import time
+      from typing import Dict, List, Callable, Any
+      from dataclasses import dataclass, field
+      from enum import Enum
+      import subprocess
+      import os
+
+      class ProjectPhase(Enum):
+          PLANNING = "planning"
+          IMPLEMENTATION = "implementation"
+          TESTING = "testing"
+          DEPLOYMENT = "deployment"
+          EVALUATION = "evaluation"
+
+      class ComponentType(Enum):
+          VISION = "vision"
+          LANGUAGE = "language"
+          ACTION = "action"
+          CONTROL = "control"
+          NAVIGATION = "navigation"
+          MANIPULATION = "manipulation"
+
+      @dataclass
+      class ProjectComponent:
+          """Represents a component of the humanoid project"""
+          name: str
+          component_type: ComponentType
+          dependencies: List[str]
+          implementation: Callable
+          test_function: Callable
+          status: str = "not_started"
+          performance_metrics: Dict[str, float] = field(default_factory=dict)
+
+      class CapstoneProjectManager:
+          """Manage the humanoid capstone project lifecycle"""
+          def __init__(self, project_name: str):
+              self.project_name = project_name
+              self.phase = ProjectPhase.PLANNING
+              self.components = {}
+              self.project_timeline = {}
+              self.resources = {}
+              self.risks = []
+              self.milestones = []
+              self.evaluation_criteria = {}
+
+          def add_component(self, name: str, component_type: ComponentType,
+                          implementation: Callable, test_function: Callable,
+                          dependencies: List[str] = None):
+              """Add a component to the project"""
+              if dependencies is None:
+                  dependencies = []
+
+              component = ProjectComponent(
+                  name=name,
+                  component_type=component_type,
+                  dependencies=dependencies,
+                  implementation=implementation,
+                  test_function=test_function
+              )
+
+              self.components[name] = component
+              print(f"Added component: {name} ({component_type.value})")
+
+          def plan_project(self):
+              """Plan the project timeline and resource allocation"""
+              print(f"Planning project: {self.project_name}")
+
+              # Define project phases and timelines
+              self.project_timeline = {
+                  ProjectPhase.PLANNING: {"start": 0, "end": 2, "duration": 2},  # weeks
+                  ProjectPhase.IMPLEMENTATION: {"start": 2, "end": 8, "duration": 6},
+                  ProjectPhase.TESTING: {"start": 8, "end": 10, "duration": 2},
+                  ProjectPhase.DEPLOYMENT: {"start": 10, "end": 11, "duration": 1},
+                  ProjectPhase.EVALUATION: {"start": 11, "end": 12, "duration": 1}
+              }
+
+              # Define resources needed
+              self.resources = {
+                  "humanoid_robot": 1,
+                  "development_workstations": 2,
+                  "simulation_environment": 1,
+                  "testing_space": 1,
+                  "project_team": ["developer_1", "developer_2", "tester"]
+              }
+
+              # Define evaluation criteria
+              self.evaluation_criteria = {
+                  "functionality": 0.4,  # 40% weight
+                  "performance": 0.25,   # 25% weight
+                  "reliability": 0.2,    # 20% weight
+                  "innovation": 0.15     # 15% weight
+              }
+
+              print("Project planning completed")
+
+          def implement_component(self, component_name: str):
+              """Implement a specific component"""
+              if component_name not in self.components:
+                  print(f"Component {component_name} not found")
+                  return False
+
+              component = self.components[component_name]
+
+              # Check dependencies
+              for dep in component.dependencies:
+                  if dep not in self.components or self.components[dep].status != "completed":
+                      print(f"Dependency {dep} not satisfied for {component_name}")
+                      return False
+
+              try:
+                  print(f"Implementing component: {component_name}")
+                  component.implementation()
+                  component.status = "completed"
+                  print(f"Component {component_name} implemented successfully")
+                  return True
+              except Exception as e:
+                  print(f"Error implementing component {component_name}: {e}")
+                  component.status = "failed"
+                  return False
+
+          def test_component(self, component_name: str):
+              """Test a specific component"""
+              if component_name not in self.components:
+                  print(f"Component {component_name} not found")
+                  return False
+
+              component = self.components[component_name]
+
+              if component.status != "completed":
+                  print(f"Component {component_name} not implemented yet")
+                  return False
+
+              try:
+                  print(f"Testing component: {component_name}")
+                  success, metrics = component.test_function()
+                  component.performance_metrics = metrics
+                  component.status = "tested" if success else "failed_testing"
+                  print(f"Component {component_name} test {'passed' if success else 'failed'}")
+                  return success
+              except Exception as e:
+                  print(f"Error testing component {component_name}: {e}")
+                  component.status = "failed_testing"
+                  return False
+
+          def evaluate_project(self):
+              """Evaluate the complete project"""
+              print(f"Evaluating project: {self.project_name}")
+
+              # Calculate component completion
+              completed_components = sum(1 for comp in self.components.values() if comp.status == "tested")
+              total_components = len(self.components)
+              completion_rate = completed_components / total_components if total_components > 0 else 0
+
+              # Calculate weighted scores
+              functionality_score = self.calculate_functionality_score()
+              performance_score = self.calculate_performance_score()
+              reliability_score = self.calculate_reliability_score()
+              innovation_score = self.calculate_innovation_score()
+
+              # Overall score
+              overall_score = (
+                  functionality_score * self.evaluation_criteria["functionality"] +
+                  performance_score * self.evaluation_criteria["performance"] +
+                  reliability_score * self.evaluation_criteria["reliability"] +
+                  innovation_score * self.evaluation_criteria["innovation"]
+              )
+
+              evaluation_results = {
+                  "completion_rate": completion_rate,
+                  "functionality_score": functionality_score,
+                  "performance_score": performance_score,
+                  "reliability_score": reliability_score,
+                  "innovation_score": innovation_score,
+                  "overall_score": overall_score,
+                  "total_components": total_components,
+                  "completed_components": completed_components
+              }
+
+              print(f"Project evaluation completed:")
+              for key, value in evaluation_results.items():
+                  print(f"  {key}: {value}")
+
+              return evaluation_results
+
+          def calculate_functionality_score(self) -> float:
+              """Calculate functionality score based on component implementation"""
+              if not self.components:
+                  return 0.0
+
+              functional_components = sum(
+                  1 for comp in self.components.values()
+                  if comp.status == "tested" and comp.component_type in [
+                      ComponentType.VISION, ComponentType.LANGUAGE, ComponentType.ACTION
+                  ]
+              )
+
+              return functional_components / len([c for c in self.components.values() if c.component_type in [
+                  ComponentType.VISION, ComponentType.LANGUAGE, ComponentType.ACTION
+              ]])
+
+          def calculate_performance_score(self) -> float:
+              """Calculate performance score based on metrics"""
+              if not self.components:
+                  return 0.0
+
+              total_performance = 0.0
+              performance_count = 0
+
+              for comp in self.components.values():
+                  if comp.performance_metrics:
+                      # Average performance metrics
+                      avg_metric = sum(comp.performance_metrics.values()) / len(comp.performance_metrics)
+                      total_performance += avg_metric
+                      performance_count += 1
+
+              return total_performance / performance_count if performance_count > 0 else 0.0
+
+          def calculate_reliability_score(self) -> float:
+              """Calculate reliability score"""
+              # This would be based on testing results and failure rates
+              successful_tests = sum(
+                  1 for comp in self.components.values()
+                  if comp.status == "tested"
+              )
+              total_tests = len(self.components)
+
+              return successful_tests / total_tests if total_tests > 0 else 0.0
+
+          def calculate_innovation_score(self) -> float:
+              """Calculate innovation score"""
+              # This would be based on novel approaches and creative solutions
+              # For now, return a placeholder score
+              return 0.8  # Assume good innovation
+
+      class CapstoneProjectNode(Node):
+          """ROS2 node for managing the capstone project"""
+          def __init__(self):
+              super().__init__('capstone_project_manager')
+
+              # Publishers and subscribers
+              self.project_command_sub = self.create_subscription(
+                  String, '/capstone/command', self.command_callback, 10)
+              self.project_status_pub = self.create_publisher(String, '/capstone/status', 10)
+              self.project_evaluation_pub = self.create_publisher(String, '/capstone/evaluation', 10)
+
+              # Initialize project manager
+              self.project_manager = CapstoneProjectManager("Humanoid_VLA_Assistant")
+
+              # Timer for project monitoring
+              self.monitor_timer = self.create_timer(1.0, self.monitor_project)
+
+              # Initialize project components
+              self.initialize_project_components()
+
+              self.get_logger().info('Capstone Project Manager initialized')
+
+          def initialize_project_components(self):
+              """Initialize all project components"""
+              # Vision component
+              self.project_manager.add_component(
+                  name="vision_system",
+                  component_type=ComponentType.VISION,
+                  implementation=self.implement_vision_system,
+                  test_function=self.test_vision_system,
+                  dependencies=[]
+              )
+
+              # Language component
+              self.project_manager.add_component(
+                  name="language_system",
+                  component_type=ComponentType.LANGUAGE,
+                  implementation=self.implement_language_system,
+                  test_function=self.test_language_system,
+                  dependencies=["vision_system"]
+              )
+
+              # Action component
+              self.project_manager.add_component(
+                  name="action_system",
+                  component_type=ComponentType.ACTION,
+                  implementation=self.implement_action_system,
+                  test_function=self.test_action_system,
+                  dependencies=["language_system"]
+              )
+
+              # Navigation component
+              self.project_manager.add_component(
+                  name="navigation_system",
+                  component_type=ComponentType.NAVIGATION,
+                  implementation=self.implement_navigation_system,
+                  test_function=self.test_navigation_system,
+                  dependencies=["vision_system", "action_system"]
+              )
+
+              # Manipulation component
+              self.project_manager.add_component(
+                  name="manipulation_system",
+                  component_type=ComponentType.MANIPULATION,
+                  implementation=self.implement_manipulation_system,
+                  test_function=self.test_manipulation_system,
+                  dependencies=["vision_system", "action_system"]
+              )
+
+              # Plan the project
+              self.project_manager.plan_project()
+
+          def command_callback(self, msg):
+              """Process project commands"""
+              try:
+                  command_data = json.loads(msg.data)
+                  command_type = command_data.get("command")
+                  target = command_data.get("target")
+
+                  if command_type == "start_implementation":
+                      self.start_implementation_phase()
+                  elif command_type == "test_component":
+                      success = self.project_manager.test_component(target)
+                      self.publish_status(f"Test {'passed' if success else 'failed'} for {target}")
+                  elif command_type == "evaluate_project":
+                      results = self.project_manager.evaluate_project()
+                      self.publish_evaluation(results)
+                  elif command_type == "get_status":
+                      status = self.get_project_status()
+                      self.publish_status(json.dumps(status))
+
+              except json.JSONDecodeError:
+                  self.get_logger().error(f"Invalid JSON command: {msg.data}")
+
+          def start_implementation_phase(self):
+              """Start the implementation phase"""
+              self.get_logger().info("Starting implementation phase")
+
+              # Implement all components
+              for component_name in self.project_manager.components:
+                  success = self.project_manager.implement_component(component_name)
+                  if not success:
+                      self.get_logger().error(f"Failed to implement {component_name}")
+
+          def implement_vision_system(self):
+              """Implementation function for vision system"""
+              time.sleep(0.1)  # Simulate implementation time
+              print("Vision system implemented")
+
+          def test_vision_system(self):
+              """Test function for vision system"""
+              time.sleep(0.05)  # Simulate test time
+              success = True  # Simulate success
+              metrics = {"accuracy": 0.95, "fps": 30.0}
+              print("Vision system tested")
+              return success, metrics
+
+          def implement_language_system(self):
+              """Implementation function for language system"""
+              time.sleep(0.1)
+              print("Language system implemented")
+
+          def test_language_system(self):
+              """Test function for language system"""
+              time.sleep(0.05)
+              success = True
+              metrics = {"understanding_rate": 0.92, "response_time": 1.2}
+              print("Language system tested")
+              return success, metrics
+
+          def implement_action_system(self):
+              """Implementation function for action system"""
+              time.sleep(0.1)
+              print("Action system implemented")
+
+          def test_action_system(self):
+              """Test function for action system"""
+              time.sleep(0.05)
+              success = True
+              metrics = {"execution_success": 0.98, "precision": 0.02}
+              print("Action system tested")
+              return success, metrics
+
+          def implement_navigation_system(self):
+              """Implementation function for navigation system"""
+              time.sleep(0.1)
+              print("Navigation system implemented")
+
+          def test_navigation_system(self):
+              """Test function for navigation system"""
+              time.sleep(0.05)
+              success = True
+              metrics = {"navigation_success": 0.94, "path_efficiency": 0.88}
+              print("Navigation system tested")
+              return success, metrics
+
+          def implement_manipulation_system(self):
+              """Implementation function for manipulation system"""
+              time.sleep(0.1)
+              print("Manipulation system implemented")
+
+          def test_manipulation_system(self):
+              """Test function for manipulation system"""
+              time.sleep(0.05)
+              success = True
+              metrics = {"grasp_success": 0.91, "placement_accuracy": 0.96}
+              print("Manipulation system tested")
+              return success, metrics
+
+          def get_project_status(self):
+              """Get current project status"""
+              status = {
+                  "project_name": self.project_manager.project_name,
+                  "phase": self.project_manager.phase.value,
+                  "components": {
+                      name: {
+                          "status": comp.status,
+                          "type": comp.component_type.value,
+                          "metrics": comp.performance_metrics
+                      }
+                      for name, comp in self.project_manager.components.items()
+                  },
+                  "timeline": self.project_manager.project_timeline,
+                  "resources": self.project_manager.resources
+              }
+              return status
+
+          def monitor_project(self):
+              """Monitor project progress"""
+              status = self.get_project_status()
+              status_msg = String()
+              status_msg.data = json.dumps(status, indent=2)
+              self.project_status_pub.publish(status_msg)
+
+          def publish_status(self, status_text: str):
+              """Publish status message"""
+              status_msg = String()
+              status_msg.data = status_text
+              self.project_status_pub.publish(status_msg)
+
+          def publish_evaluation(self, evaluation_results: Dict):
+              """Publish evaluation results"""
+              eval_msg = String()
+              eval_msg.data = json.dumps(evaluation_results, indent=2)
+              self.project_evaluation_pub.publish(eval_msg)
+
+      def main(args=None):
+          rclpy.init(args=args)
+          node = CapstoneProjectNode()
+
+          try:
+              rclpy.spin(node)
+          except KeyboardInterrupt:
+              node.get_logger().info('Shutting down capstone project manager...')
+          finally:
+              node.destroy_node()
+              rclpy.shutdown()
+
+      if __name__ == '__main__':
+          main()
+
+  -
+    title: "Humanoid Safety and Performance Monitoring"
+    description: "System for monitoring humanoid robot safety and performance during operation"
+    language: "python"
+    framework: "ROS2 with Safety Systems"
+    code: |
+      #!/usr/bin/env python3
+      """
+      Humanoid Safety and Performance Monitoring
+      System for monitoring humanoid robot safety and performance during operation
+      """
+      import rclpy
+      from rclpy.node import Node
+      from std_msgs.msg import String, Bool, Float64
+      from sensor_msgs.msg import JointState, Imu, BatteryState
+      from geometry_msgs.msg import Twist, Pose
+      from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus
+      import numpy as np
+      import time
+      from typing import Dict, List
+      import threading
+      from dataclasses import dataclass
+      from enum import Enum
+
+      class SafetyLevel(Enum):
+          SAFE = "safe"
+          WARNING = "warning"
+          DANGER = "danger"
+          CRITICAL = "critical"
+
+      class PerformanceMetric(Enum):
+          STABILITY = "stability"
+          BALANCE = "balance"
+          POWER = "power"
+          JOINT_HEALTH = "joint_health"
+          NAVIGATION_ACCURACY = "navigation_accuracy"
+
+      @dataclass
+      class SafetyThresholds:
+          """Safety thresholds for different parameters"""
+          max_joint_temp: float = 70.0  # Celsius
+          max_current: float = 10.0    # Amps
+          max_imu_angle: float = 30.0  # Degrees
+          min_battery: float = 20.0    # Percentage
+          max_power_consumption: float = 500.0  # Watts
+
+      class SafetyMonitor:
+          """Monitor safety parameters of the humanoid robot"""
+          def __init__(self):
+              self.thresholds = SafetyThresholds()
+              self.current_readings = {
+                  'joint_temps': {},
+                  'joint_currents': {},
+                  'imu_angles': np.array([0.0, 0.0, 0.0]),
+                  'battery_level': 100.0,
+                  'power_consumption': 0.0
+              }
+              self.safety_history = []
+              self.max_history = 100
+
+          def update_joint_state(self, joint_state: JointState):
+              """Update with joint state information"""
+              for i, name in enumerate(joint_state.name):
+                  if i < len(joint_state.effort):  # Using effort as proxy for current
+                      self.current_readings['joint_currents'][name] = joint_state.effort[i]
+                  # In real implementation, temperature would come from separate messages
+
+          def update_imu_data(self, imu_data):
+              """Update with IMU data for balance monitoring"""
+              # Convert quaternion to Euler angles (simplified)
+              w, x, y, z = imu_data.orientation.w, imu_data.orientation.x, imu_data.orientation.y, imu_data.orientation.z
+
+              # Roll (x-axis rotation)
+              sinr_cosp = 2 * (w * x + y * z)
+              cosr_cosp = 1 - 2 * (x * x + y * y)
+              roll = np.arctan2(sinr_cosp, cosr_cosp)
+
+              # Pitch (y-axis rotation)
+              sinp = 2 * (w * y - z * x)
+              pitch = np.arcsin(sinp)
+
+              # Yaw (z-axis rotation)
+              siny_cosp = 2 * (w * z + x * y)
+              cosy_cosp = 1 - 2 * (y * y + z * z)
+              yaw = np.arctan2(siny_cosp, cosy_cosp)
+
+              self.current_readings['imu_angles'] = np.array([roll, pitch, yaw]) * 180 / np.pi  # Convert to degrees
+
+          def update_battery_data(self, battery_data):
+              """Update with battery information"""
+              self.current_readings['battery_level'] = battery_data.percentage * 100
+
+          def check_safety(self) -> SafetyLevel:
+              """Check current safety status"""
+              safety_issues = []
+
+              # Check joint temperatures (simulated)
+              for joint, temp in self.current_readings['joint_temps'].items():
+                  if temp > self.thresholds.max_joint_temp:
+                      safety_issues.append(f"High temperature in {joint}: {temp}°C")
+
+              # Check joint currents
+              for joint, current in self.current_readings['joint_currents'].items():
+                  if abs(current) > self.thresholds.max_current:
+                      safety_issues.append(f"High current in {joint}: {current}A")
+
+              # Check IMU angles (balance)
+              max_angle = np.max(np.abs(self.current_readings['imu_angles']))
+              if max_angle > self.thresholds.max_imu_angle:
+                  safety_issues.append(f"Balance exceeded: {max_angle}°")
+
+              # Check battery level
+              if self.current_readings['battery_level'] < self.thresholds.min_battery:
+                  safety_issues.append(f"Low battery: {self.current_readings['battery_level']:.1f}%")
+
+              # Determine safety level
+              if len(safety_issues) == 0:
+                  level = SafetyLevel.SAFE
+              elif len(safety_issues) == 1:
+                  level = SafetyLevel.WARNING
+              elif len(safety_issues) <= 3:
+                  level = SafetyLevel.DANGER
+              else:
+                  level = SafetyLevel.CRITICAL
+
+              # Store in history
+              self.safety_history.append({
+                  'timestamp': time.time(),
+                  'level': level,
+                  'issues': safety_issues.copy()
+              })
+
+              if len(self.safety_history) > self.max_history:
+                  self.safety_history.pop(0)
+
+              return level
+
+          def get_safety_report(self) -> Dict:
+              """Get detailed safety report"""
+              current_level = self.check_safety()
+              return {
+                  'current_level': current_level.value,
+                  'readings': self.current_readings,
+                  'issues': self.safety_history[-1]['issues'] if self.safety_history else [],
+                  'history_count': len(self.safety_history)
+              }
+
+      class PerformanceMonitor:
+          """Monitor performance metrics of the humanoid robot"""
+          def __init__(self):
+              self.metrics = {
+                  PerformanceMetric.STABILITY: [],
+                  PerformanceMetric.BALANCE: [],
+                  PerformanceMetric.POWER: [],
+                  PerformanceMetric.JOINT_HEALTH: [],
+                  PerformanceMetric.NAVIGATION_ACCURACY: []
+              }
+              self.max_history = 50
+
+          def update_stability(self, stability_score: float):
+              """Update stability metric"""
+              self._add_metric(PerformanceMetric.STABILITY, stability_score)
+
+          def update_balance(self, balance_score: float):
+              """Update balance metric"""
+              self._add_metric(PerformanceMetric.BALANCE, balance_score)
+
+          def update_power(self, power_usage: float):
+              """Update power metric"""
+              self._add_metric(PerformanceMetric.POWER, power_usage)
+
+          def update_joint_health(self, health_score: float):
+              """Update joint health metric"""
+              self._add_metric(PerformanceMetric.JOINT_HEALTH, health_score)
+
+          def update_navigation_accuracy(self, accuracy_score: float):
+              """Update navigation accuracy metric"""
+              self._add_metric(PerformanceMetric.NAVIGATION_ACCURACY, accuracy_score)
+
+          def _add_metric(self, metric: PerformanceMetric, value: float):
+              """Add value to metric history"""
+              self.metrics[metric].append(value)
+              if len(self.metrics[metric]) > self.max_history:
+                  self.metrics[metric].pop(0)
+
+          def get_performance_summary(self) -> Dict:
+              """Get performance summary with averages"""
+              summary = {}
+              for metric, values in self.metrics.items():
+                  if values:
+                      avg_value = sum(values) / len(values)
+                      summary[metric.value] = {
+                          'average': avg_value,
+                          'latest': values[-1],
+                          'count': len(values),
+                          'trend': self._calculate_trend(values)
+                      }
+                  else:
+                      summary[metric.value] = {
+                          'average': 0.0,
+                          'latest': 0.0,
+                          'count': 0,
+                          'trend': 'stable'
+                      }
+              return summary
+
+          def _calculate_trend(self, values: List[float]) -> str:
+              """Calculate trend of metric values"""
+              if len(values) < 2:
+                  return 'stable'
+
+              # Simple trend calculation based on last few values
+              recent_values = values[-5:] if len(values) >= 5 else values
+              if len(recent_values) < 2:
+                  return 'stable'
+
+              # Calculate linear trend
+              x = list(range(len(recent_values)))
+              y = recent_values
+              if len(x) > 1:
+                  # Simple linear regression slope calculation
+                  n = len(x)
+                  slope = (n * sum(x[i] * y[i] for i in range(n)) - sum(x) * sum(y)) / (n * sum(xi**2 for xi in x) - sum(x)**2)
+                  if slope > 0.01:
+                      return 'improving'
+                  elif slope < -0.01:
+                      return 'declining'
+                  else:
+                      return 'stable'
+              return 'stable'
+
+      class HumanoidSafetyNode(Node):
+          """ROS2 node for humanoid safety and performance monitoring"""
+          def __init__(self):
+              super().__init__('humanoid_safety_monitor')
+
+              # Publishers and subscribers
+              self.joint_state_sub = self.create_subscription(
+                  JointState, '/joint_states', self.joint_state_callback, 10)
+              self.imu_sub = self.create_subscription(
+                  Imu, '/imu/data', self.imu_callback, 10)
+              self.battery_sub = self.create_subscription(
+                  BatteryState, '/battery_state', self.battery_callback, 10)
+              self.cmd_vel_sub = self.create_subscription(
+                  Twist, '/cmd_vel', self.velocity_callback, 10)
+
+              self.safety_pub = self.create_publisher(DiagnosticArray, '/safety_status', 10)
+              self.performance_pub = self.create_publisher(String, '/performance_metrics', 10)
+              self.emergency_stop_pub = self.create_publisher(Bool, '/emergency_stop', 10)
+
+              # Initialize monitors
+              self.safety_monitor = SafetyMonitor()
+              self.performance_monitor = PerformanceMonitor()
+
+              # Emergency state
+              self.emergency_active = False
+
+              # Timer for safety checks
+              self.safety_timer = self.create_timer(0.1, self.safety_check_callback)  # 10Hz
+
+              self.get_logger().info('Humanoid Safety Monitor initialized')
+
+          def joint_state_callback(self, msg):
+              """Process joint state updates"""
+              self.safety_monitor.update_joint_state(msg)
+
+              # Update performance metrics based on joint behavior
+              if len(msg.position) > 0:
+                  # Calculate joint smoothness as a performance metric
+                  smoothness = self._calculate_joint_smoothness(msg.position)
+                  self.performance_monitor.update_joint_health(smoothness)
+
+          def imu_callback(self, msg):
+              """Process IMU updates"""
+              self.safety_monitor.update_imu_data(msg)
+
+              # Update balance performance metric
+              balance_score = self._calculate_balance_score(msg.orientation)
+              self.performance_monitor.update_balance(balance_score)
+
+          def battery_callback(self, msg):
+              """Process battery updates"""
+              self.safety_monitor.update_battery_data(msg)
+
+              # Update power performance metric
+              power_score = msg.percentage * 100  # Use battery level as proxy for power management
+              self.performance_monitor.update_power(power_score)
+
+          def velocity_callback(self, msg):
+              """Process velocity commands for performance monitoring"""
+              # Calculate stability based on commanded velocity
+              velocity_magnitude = np.sqrt(msg.linear.x**2 + msg.linear.y**2 + msg.angular.z**2)
+              stability_score = max(0, 1 - velocity_magnitude / 2.0)  # Normalize to 0-1 scale
+              self.performance_monitor.update_stability(stability_score)
+
+          def safety_check_callback(self):
+              """Perform safety check and publish status"""
+              # Check safety level
+              safety_level = self.safety_monitor.check_safety()
+
+              # Create diagnostic message
+              diag_array = DiagnosticArray()
+              diag_array.header.stamp = self.get_clock().now().to_msg()
+
+              diag_status = DiagnosticStatus()
+              diag_status.name = "Humanoid Safety Monitor"
+              diag_status.hardware_id = "humanoid_robot"
+
+              # Set status level based on safety
+              if safety_level == SafetyLevel.SAFE:
+                  diag_status.level = DiagnosticStatus.OK
+                  diag_status.message = "All systems nominal"
+              elif safety_level == SafetyLevel.WARNING:
+                  diag_status.level = DiagnosticStatus.WARN
+                  diag_status.message = "Safety warnings present"
+              else:
+                  diag_status.level = DiagnosticStatus.ERROR
+                  diag_status.message = f"Safety issues detected: {safety_level.value}"
+
+              # Add key metrics as values
+              readings = self.safety_monitor.current_readings
+              diag_status.values = []
+
+              # Add battery level
+              from diagnostic_msgs.msg import KeyValue
+              battery_kv = KeyValue()
+              battery_kv.key = "Battery Level (%)"
+              battery_kv.value = f"{readings['battery_level']:.1f}"
+              diag_status.values.append(battery_kv)
+
+              # Add max IMU angle
+              max_angle = np.max(np.abs(readings['imu_angles']))
+              angle_kv = KeyValue()
+              angle_kv.key = "Max IMU Angle (deg)"
+              angle_kv.value = f"{max_angle:.1f}"
+              diag_status.values.append(angle_kv)
+
+              # Add joint current info
+              if readings['joint_currents']:
+                  avg_current = sum(abs(c) for c in readings['joint_currents'].values()) / len(readings['joint_currents'])
+                  current_kv = KeyValue()
+                  current_kv.key = "Avg Joint Current (A)"
+                  current_kv.value = f"{avg_current:.2f}"
+                  diag_status.values.append(current_kv)
+
+              diag_array.status.append(diag_status)
+              self.safety_pub.publish(diag_array)
+
+              # Check if emergency stop is needed
+              if safety_level in [SafetyLevel.DANGER, SafetyLevel.CRITICAL]:
+                  if not self.emergency_active:
+                      self.trigger_emergency_stop()
+              elif safety_level == SafetyLevel.SAFE and self.emergency_active:
+                  self.clear_emergency_stop()
+
+              # Publish performance metrics
+              perf_summary = self.performance_monitor.get_performance_summary()
+              perf_msg = String()
+              perf_msg.data = str(perf_summary)
+              self.performance_pub.publish(perf_msg)
+
+          def trigger_emergency_stop(self):
+              """Trigger emergency stop"""
+              self.emergency_active = True
+              stop_msg = Bool()
+              stop_msg.data = True
+              self.emergency_stop_pub.publish(stop_msg)
+              self.get_logger().error('EMERGENCY STOP ACTIVATED')
+
+          def clear_emergency_stop(self):
+              """Clear emergency stop"""
+              self.emergency_active = False
+              stop_msg = Bool()
+              stop_msg.data = False
+              self.emergency_stop_pub.publish(stop_msg)
+              self.get_logger().info('Emergency stop cleared')
+
+          def _calculate_joint_smoothness(self, positions: List[float]) -> float:
+              """Calculate joint smoothness metric"""
+              if len(positions) < 2:
+                  return 1.0  # Perfect smoothness if only one value
+
+              # Calculate smoothness based on position changes
+              diffs = [abs(positions[i] - positions[i-1]) for i in range(1, len(positions))]
+              avg_diff = sum(diffs) / len(diffs) if diffs else 0
+
+              # Convert to smoothness score (0-1, where 1 is very smooth)
+              smoothness = max(0, 1 - avg_diff)
+              return smoothness
+
+          def _calculate_balance_score(self, orientation) -> float:
+              """Calculate balance score from orientation"""
+              # Convert quaternion to roll/pitch angles
+              w, x, y, z = orientation.w, orientation.x, orientation.y, orientation.z
+
+              sinr_cosp = 2 * (w * x + y * z)
+              cosr_cosp = 1 - 2 * (x * x + y * y)
+              roll = np.arctan2(sinr_cosp, cosr_cosp)
+
+              sinp = 2 * (w * y - z * x)
+              pitch = np.arcsin(sinp)
+
+              # Calculate balance score based on deviation from upright
+              angle_deviation = np.sqrt(roll**2 + pitch**2)
+              balance_score = max(0, 1 - angle_deviation / (np.pi/4))  # Normalize to 0-1 scale
+              return balance_score
+
+      def main(args=None):
+          rclpy.init(args=args)
+          node = HumanoidSafetyNode()
+
+          try:
+              rclpy.spin(node)
+          except KeyboardInterrupt:
+              node.get_logger().info('Shutting down humanoid safety monitor...')
+          finally:
+              node.destroy_node()
+              rclpy.shutdown()
+
+      if __name__ == '__main__':
+          main()
+
+practical_examples:
+  -
+    title: "Humanoid Service Robot"
+    description: "Students develop a complete humanoid service robot that can understand commands, navigate spaces, and perform tasks in human environments."
+    objectives:
+      - "Integrate vision, language, and action systems"
+      - "Implement safe humanoid locomotion and manipulation"
+      - "Create intuitive human-robot interaction"
+      - "Validate system in realistic service scenarios"
+    required_components:
+      - "Humanoid robot platform"
+      - "Vision system (cameras, processing)"
+      - "Natural language processing tools"
+      - "Manipulation system (arms, grippers)"
+      - "Navigation and mapping capabilities"
+    evaluation_criteria:
+      - "Task completion success rate"
+      - "Human-robot interaction quality"
+      - "System safety and reliability"
+      - "Adaptation to dynamic environments"
+  -
+    title: "Humanoid Research Platform"
+    description: "Students create a humanoid research platform for studying human-robot interaction and autonomous behavior."
+    objectives:
+      - "Design modular humanoid architecture"
+      - "Implement advanced perception systems"
+      - "Create research experiment interfaces"
+      - "Validate platform capabilities"
+    required_components:
+      - "Modular robot hardware"
+      - "Research software framework"
+      - "Data collection systems"
+      - "Experiment control interfaces"
+      - "Safety monitoring systems"
+    evaluation_criteria:
+      - "Modularity and extensibility"
+      - "Research capability and flexibility"
+      - "Data quality and collection"
+      - "System reliability for research"
+  -
+    title: "Humanoid Educational Assistant"
+    description: "Students build an educational humanoid assistant that can help with teaching and learning activities."
+    objectives:
+      - "Implement educational interaction patterns"
+      - "Create adaptive learning capabilities"
+      - "Develop child-friendly interfaces"
+      - "Test effectiveness in educational settings"
+    required_components:
+      - "Child-safe robot platform"
+      - "Educational content system"
+      - "Adaptive learning algorithms"
+      - "Safety and monitoring systems"
+      - "Educational assessment tools"
+    evaluation_criteria:
+      - "Educational effectiveness"
+      - "User engagement and satisfaction"
+      - "Safety in educational environments"
+      - "Adaptation to different learners"
+
+summary: "Chapter 20 provided comprehensive capstone project examples integrating all VLA and humanoid concepts. Students learned to develop end-to-end humanoid systems combining vision, language, and action capabilities with safety monitoring and performance evaluation. The chapter emphasized system integration, project management, and real-world deployment considerations for creating sophisticated humanoid robots capable of complex human interaction."
+
+quiz:
+  -
+    question: "What is the main purpose of a capstone project in humanoid robotics?"
+    options:
+      - A: To eliminate the need for further learning
+      - B: To integrate all learned concepts into comprehensive systems
+      - C: To reduce hardware requirements
+      - D: To make robots move faster
+    correct_answer: "B"
+    explanation: "Capstone projects integrate all learned concepts into comprehensive systems that solve real-world challenges."
+  -
+    question: "Why is safety monitoring crucial in humanoid robot projects?"
+    options:
+      - A: It makes robots cheaper
+      - B: It ensures safe operation around humans and prevents damage
+      - C: It reduces power consumption
+      - D: It eliminates the need for programming
+    correct_answer: "B"
+    explanation: "Safety monitoring ensures safe operation around humans and prevents damage to the robot and environment."
+  -
+    question: "What does system integration mean in humanoid robotics?"
+    options:
+      - A: Connecting multiple robots together
+      - B: Combining vision, language, and action components into unified systems
+      - C: Using only one type of sensor
+      - D: Making robots physically larger
+    correct_answer: "B"
+    explanation: "System integration combines vision, language, and action components into unified, functional systems."
+  -
+    question: "Why is performance evaluation important in humanoid projects?"
+    options:
+      - A: It makes robots move faster
+      - B: It measures success across multiple dimensions and guides improvements
+      - C: It reduces hardware costs
+      - D: It eliminates the need for testing
+    correct_answer: "B"
+    explanation: "Performance evaluation measures success across multiple dimensions and guides system improvements."
+  -
+    question: "What is multi-modal fusion in humanoid systems?"
+    options:
+      - A: Using multiple programming languages
+      - B: Integrating information from different sensory modalities
+      - C: Using multiple robots at once
+      - D: Making robots speak multiple languages
+    correct_answer: "B"
+    explanation: "Multi-modal fusion integrates information from different sensory modalities (vision, language, etc.) for better understanding."
+
+module_learning_outcomes:
+  - "Implement multimodal learning systems"
+  - "Integrate vision, language, and action components"
+  - "Develop interactive learning algorithms"
+  - "Create human-robot interaction systems"
+
+prerequisites:
+  - "Basic understanding of Python programming"
+  - "Fundamentals of linear algebra and calculus"
+  - "Basic knowledge of robotics concepts"
+  - "Introduction to machine learning concepts"
+  - "Completion of Module 0 (Introduction and Foundations)"
+  - "Completion of all previous chapters in Module 4 (Chapters 16-19)"
+
+estimated_duration: "8 hours"
+...

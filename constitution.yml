@@ -1,0 +1,375 @@
+name: "Physical AI & Humanoid Robotics Book Project"
+version: "2.0.0"
+author: "Ayesha Muttalib"
+description: >
+  Constitution file for creating a full AI-native textbook with integrated
+  RAG chatbot and user personalization via Better-Auth. Fully compliant with
+  hackathon requirements. Agents and subagents must strictly follow rules to
+  avoid hallucination.
+
+###############################################
+# 1. GLOBAL RULES
+###############################################
+rules:
+  - Only use technologies explicitly allowed by the hackathon:
+      * Book: Docusaurus, Spec-Kit Plus
+      * RAG: FastAPI, Neon Serverless Postgres, Qdrant Cloud Free Tier
+      * Auth: Better-Auth
+  - Do not invent hardware, ROS2 commands, or APIs outside the course material
+  - Agents must strictly follow constitution and chapter content
+  - When unsure, respond: "Information not available in project context"
+  - All generated code must be clean, modular, and maintainable
+  - All content must follow course outline and references
+
+###############################################
+# 2. PROJECT STRUCTURE
+###############################################
+project_structure:
+  root:
+    - docusaurus/        # Book content
+    - rag/              # RAG ingestion pipeline
+    - auth/             # Better-Auth integration
+    - agents/           # Main agents & subagents
+    - scripts/          # Build and deploy scripts
+    - .env.example
+    - package.json
+    - README.md
+
+  docusaurus:
+    - docs/
+    - src/
+      - pages/
+      - components/
+      - styles/
+    - static/
+    - sidebars.js
+    - docusaurus.config.js
+
+  rag:
+    - ingest.py
+    - embed.py
+    - vector_store/
+      - store.json
+    - utils/
+      - chunker.py
+      - loader.py
+      - embeddings.py
+
+  auth:
+    - better_auth_integration.py
+    - signup_form.py
+    - personalization_logic.py
+
+  agents:
+    - rag-assistant.yaml
+    - book-writer.yaml
+    - editor.yaml
+    - subagents/
+      - chapter-writer.yaml
+      - code-writer.yaml
+      - summarizer.yaml
+      - citation-checker.yaml
+
+###############################################
+# 3. BOOK SPECIFICATION
+###############################################
+book:
+  title: "Physical AI & Humanoid Robotics"
+  subtitle: "From Digital Agents to Real-World Humanoids"
+  purpose: >
+    Full textbook to teach students Physical AI principles, ROS2, Gazebo,
+    NVIDIA Isaac, humanoid locomotion, perception, and embodied intelligence.
+  chapters:
+    - 00-introduction
+    - 01-physical-ai-basics
+    - 02-sensing-and-embodied-intelligence
+    - 03-ros2-nervous-system
+    - 04-digital-twin-gazebo-unity
+    - 05-nvidia-isaac-brain
+    - 06-vision-language-action
+    - 07-humanoid-locomotion
+    - 08-rag-chatbot-integration
+    - 09-auth-personalization
+    - 10-capstone-project
+
+  chapter_placeholders:
+    "00-introduction":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "01-physical-ai-basics":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "02-sensing-and-embodied-intelligence":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "03-ros2-nervous-system":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "04-digital-twin-gazebo-unity":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "05-nvidia-isaac-brain":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "06-vision-language-action":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "07-humanoid-locomotion":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "08-rag-chatbot-integration":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "09-auth-personalization":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+    "10-capstone-project":
+      overview: ""
+      why_it_matters: ""
+      key_concepts: []
+      code_examples: []
+      practical_examples: []
+      summary: ""
+      quiz: []
+
+chapter_rules:
+  - Each chapter must include:
+      * Overview
+      * Why it matters
+      * Key Concepts
+      * Code Examples (ROS2, Gazebo, Isaac)
+      * Practical Examples
+      * Summary
+      * Quiz
+  - Chapters must strictly follow course outline and references
+  - No hallucinated content
+
+###############################################
+# 4. RAG CHATBOT PIPELINE
+###############################################
+rag_pipeline:
+  vector_store: "Qdrant Cloud Free Tier"
+  chunk_size: 800
+  overlap: 100
+  retrieval:
+    - Load embeddings from vector store
+    - Perform similarity search
+    - Return top 5 chunks for answer generation
+  constraints:
+    - Only answer questions from book content
+    - If no relevant content found, respond: "Information not available in project context"
+
+rag_api_spec:
+  framework: "FastAPI"
+  endpoints:
+    - POST /api/rag/query:
+        input: userQuery(string)
+        output: answer, context_chunks
+
+###############################################
+# 5. AUTHENTICATION AND PERSONALIZATION
+###############################################
+auth:
+  provider: "Better-Auth"
+  fields_collected:
+    - name
+    - email
+    - software_background
+    - hardware_background
+  personalization_features:
+    - content_depth_toggle
+    - urdu_translation_toggle
+  integration:
+    - Signup & Signin forms in Docusaurus pages
+    - Background info used to personalize chapter content
+
+###############################################
+# 6. AGENTS & SUBAGENTS
+###############################################
+agents:
+  main_agents:
+    - rag-assistant:
+        role: "Answer questions strictly from book content via RAG pipeline"
+        no_general_knowledge: true
+    - book-writer:
+        role: "Generate accurate textbook chapters from outlines"
+    - editor:
+        role: "Improve clarity and readability without adding facts"
+
+  subagents:
+    - chapter-writer: writes chapters from outlines
+    - code-writer: writes ROS2 / Gazebo / Isaac code examples
+    - summarizer: produces chapter summaries
+    - citation-checker: ensures content matches course outline
+
+###############################################
+# 7. DEPLOYMENT
+###############################################
+deployment:
+  book_hosting: "GitHub Pages"
+  rag_hosting: "FastAPI backend"
+  auth_hosting: "Better-Auth"
+  build_commands:
+    - npm run build
+    - npm run deploy
+
+###############################################
+# 8. CONSTRAINTS
+###############################################
+constraints:
+  - Never invent ROS2, Gazebo, Isaac commands
+  - Never invent hardware or backend APIs outside the constitution
+  - All agents must follow the constitution strictly
+  - When unsure, respond: "Information not available in project context"
+
+###############################################
+# 9. PROMPT HISTORY RECORD (PHR)
+###############################################
+phr_log:
+  description: "Log of all actions, prompts, and content edits for audit trail"
+  schema:
+    timestamp: "ISO 8601 timestamp"
+    action_type: "create/update/delete/edit"
+    content_type: "chapter/code/example/text/etc."
+    agent_responsible: "Agent name that performed action"
+    prompt_used: "Exact prompt that triggered the action"
+    changes_made: "Brief description of changes made"
+    approval_status: "Draft/Reviewed/Published"
+  example_entry:
+    timestamp: "2025-01-15T10:30:00Z"
+    action_type: "create"
+    content_type: "chapter"
+    agent_responsible: "book-writer"
+    prompt_used: "Create introduction chapter with overview, key concepts, and examples"
+    changes_made: "Created 00-introduction chapter with all required sections"
+    approval_status: "Draft"
+
+# PHR Log Entries will be appended here as actions occur:
+phr_entries:
+  - timestamp: "2025-12-12T10:30:00Z"
+    action_type: "create"
+    content_type: "chapter-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create a detailed specification for Chapter 01 - Physical AI Basics"
+    changes_made: "Created detailed specification for Chapter 01 - Physical AI Basics with all required fields (overview, why_it_matters, key_concepts, code_examples, practical_examples, summary, quiz) and stored in specs/01-physical-ai-basics.yml"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:10:00Z"
+    action_type: "update"
+    content_type: "folder-structure"
+    agent_responsible: "book-writer"
+    prompt_used: "Ayesha wants Qwen to always follow Spec-Kit Plus folder structure"
+    changes_made: "Created new Spec-Kit Plus folder structure (specs/, docs/, .templates/, .specify/memory/, .specify/memory/phr/, .specify/memory/plans/, .specify/memory/tasks/) and moved chapter spec from specify/memory/ to specs/"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:15:00Z"
+    action_type: "create"
+    content_type: "book-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create a detailed specification for the book Physical AI & Humanoid Robotics"
+    changes_made: "Created comprehensive book specification for Physical AI & Humanoid Robotics with course outline, learning objectives, technical requirements, and pedagogical approach, stored in specs/book-specification.yml"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:20:00Z"
+    action_type: "create"
+    content_type: "book-modules-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create a detailed specification for the book Physical AI & Humanoid Robotics with all modules"
+    changes_made: "Created comprehensive module-based book specification with 10 detailed modules (M0-M9), module dependencies, progression pathways, assessment methods, and technical requirements, stored in specs/book-modules-specification.yml"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:25:00Z"
+    action_type: "update"
+    content_type: "chapter-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create Chapter 01 - Physical AI Basics in Module 1 - ROS2 Nervous System"
+    changes_made: "Updated Chapter 01 specification to assign it to M2-ros2-architecture (ROS2: The Robot's Nervous System) module with appropriate learning outcomes, stored in specs/01-physical-ai-basics.yml"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:30:00Z"
+    action_type: "create"
+    content_type: "chapter-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create Chapter 02 - Sensing & Embodied Intelligence in Module 1 - ROS2 Nervous System"
+    changes_made: "Created Chapter 02 specification for Sensing & Embodied Intelligence assigned to M1-sensing-perception (Sensing and Perception) module with comprehensive content including overview, key concepts, code examples, practical examples, summary, quiz, and module-specific details, stored in specs/02-sensing-and-embodied-intelligence.yml"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:35:00Z"
+    action_type: "create"
+    content_type: "chapter-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create Chapter 03 - ROS2 Nodes, Topics, and Services in Module 1 - ROS2 Nervous System"
+    changes_made: "Created Chapter 03 specification for ROS2 Nodes, Topics, and Services assigned to M2-ros2-architecture (ROS2: The Robot's Nervous System) module with comprehensive content including overview, key concepts, code examples, practical examples, summary, quiz, and module-specific details, stored in specs/03-ros2-nodes-topics-services.yml"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:40:00Z"
+    action_type: "create"
+    content_type: "chapter-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create Chapter 04 - ROS2 Communication Patterns in Module 1 - ROS2 Nervous System"
+    changes_made: "Created Chapter 04 specification for ROS2 Communication Patterns assigned to M2-ros2-architecture (ROS2: The Robot's Nervous System) module with comprehensive content including overview, key concepts, code examples, practical examples, summary, quiz, and module-specific details, stored in specs/04-ros2-communication-patterns.yml"
+    approval_status: "Draft"
+  - timestamp: "2025-12-12T20:45:00Z"
+    action_type: "create"
+    content_type: "chapter-specification"
+    agent_responsible: "book-writer"
+    prompt_used: "/sp.specify Create Chapter 05 - Practical ROS2 Examples in Module 1 - ROS2 Nervous System"
+    changes_made: "Created Chapter 05 specification for Practical ROS2 Examples assigned to M2-ros2-architecture (ROS2: The Robot's Nervous System) module with comprehensive content including overview, key concepts, code examples, practical examples, summary, quiz, and module-specific details, stored in specs/05-practical-ros2-examples.yml"
+    approval_status: "Draft"
+
+###############################################
+# END OF CONSTITUTION
+###############################################

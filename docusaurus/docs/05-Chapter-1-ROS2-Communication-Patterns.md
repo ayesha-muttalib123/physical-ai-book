@@ -1,0 +1,449 @@
+---
+id: 05-Chapter-1-ROS2-Communication-Patterns
+title: "Chapter 1: ROS2 Communication Patterns"
+sidebar_position: 5
+---
+
+# Chapter 1: ROS2 Communication Patterns
+
+## Overview
+
+This chapter explores advanced ROS2 communication patterns beyond basic nodes, topics, and services. Students will learn about actions for long-running tasks, parameters for configuration management, and complex communication architectures. The chapter covers how to design robust communication systems using appropriate patterns for different scenarios, including error handling, state management, and asynchronous operations.
+
+## Why It Matters
+
+Understanding advanced ROS2 communication patterns is crucial for building sophisticated robotic systems that can handle complex tasks. Actions are essential for long-running operations with feedback, parameters enable dynamic configuration, and proper pattern selection ensures robust and maintainable robot software. These patterns allow developers to create systems that can gracefully handle failures, provide feedback during execution, and adapt to changing conditions.
+
+## Key Concepts
+
+### ROS2 Actions
+Communication pattern for long-running tasks with goal, feedback, and result. Actions are ideal for operations that take time to complete and need to provide feedback during execution, such as navigation, manipulation, or calibration tasks. They include mechanisms for cancellation and result reporting.
+
+### Parameters
+Dynamic configuration system for runtime parameter management. Parameters allow nodes to change their behavior at runtime without restarting, providing flexibility for tuning and adapting to different conditions or environments.
+
+### ROS2 Actions vs Services
+When to use each pattern for different use cases. Actions are better for long-running operations that need feedback, while services are suitable for quick request-response interactions.
+
+### Parameter Callbacks
+Handling parameter changes at runtime. Parameter callbacks allow nodes to validate and react to parameter changes, enabling sophisticated configuration management.
+
+### ROS2 Namespaces
+Hierarchical organization of nodes and topics. Namespaces provide a way to organize ROS2 entities and avoid naming conflicts, similar to directories in a file system.
+
+### Composition
+Running multiple nodes in the same process for efficiency. Composition can improve performance by avoiding network overhead and enabling direct function calls between nodes.
+
+### ROS2 Launch Files
+Managing complex multi-node systems. Launch files provide a declarative way to start multiple nodes with parameters and remappings, making it easier to manage complex robotic systems.
+
+### Lifecycle Nodes
+Managing node states and transitions explicitly. Lifecycle nodes have explicit state management (unconfigured, inactive, active, finalized), providing better control over node behavior and resource management.
+
+## Code Examples
+
+### ROS2 Action Server for Navigation
+
+Action server that handles navigation goals with feedback and result:
+
+```python
+import rclpy
+from rclpy.action import ActionServer, GoalResponse, CancelResponse
+from rclpy.node import Node
+from rclpy.executors import MultiThreadedExecutor
+from rclpy.callback_groups import ReentrantCallbackGroup
+from nav_msgs.action import NavigateToPose  # Using navigation action as example
+import time
+import threading
+
+class NavigationActionServer(Node):
+    def __init__(self):
+        super().__init__('navigation_action_server')
+
+        # Create action server with reentrant callback group for concurrency
+        self._action_server = ActionServer(
+            self,
+            NavigateToPose,
+            'navigate_to_pose',
+            execute_callback=self.execute_callback,
+            goal_callback=self.goal_callback,
+            cancel_callback=self.cancel_callback,
+            callback_group=ReentrantCallbackGroup())
+
+        # Simulate robot position
+        self.current_x = 0.0
+        self.current_y = 0.0
+
+        self.get_logger().info('Navigation action server initialized')
+
+    def goal_callback(self, goal_request):
+        # Accept all goals for this example
+        self.get_logger().info('Received navigation goal request')
+        return GoalResponse.ACCEPT
+
+    def cancel_callback(self, goal_handle):
+        # Accept all cancel requests for this example
+        self.get_logger().info('Received cancel request')
+        return CancelResponse.ACCEPT
+
+    def execute_callback(self, goal_handle):
+        self.get_logger().info('Executing navigation goal...')
+
+        # Get target pose from goal
+        target_x = goal_handle.request.pose.pose.position.x
+        target_y = goal_handle.request.pose.pose.position.y
+
+        # Calculate distance to target
+        distance = ((target_x - self.current_x)**2 + (target_y - self.current_y)**2)**0.5
+
+        # Simulate navigation with feedback
+        steps = 20  # Number of feedback updates
+        for i in range(steps + 1):
+            if goal_handle.is_cancel_requested:
+                goal_handle.canceled()
+                result = NavigateToPose.Result()
+                result.error_code = -1  # Canceled
+                return result
+
+            # Update current position (simulating movement)
+            progress = i / steps
+            self.current_x = self.current_x + (target_x - self.current_x) * progress
+            self.current_y = self.current_y + (target_y - self.current_y) * progress
+
+            # Publish feedback
+            feedback = NavigateToPose.Feedback()
+            feedback.current_pose.pose.position.x = self.current_x
+            feedback.current_pose.pose.position.y = self.current_y
+            feedback.distance_remaining = distance * (1 - progress)
+
+            goal_handle.publish_feedback(feedback)
+
+            self.get_logger().info(f'Navigation progress: {progress*100:.1f}%')
+
+            # Sleep to simulate navigation time
+            time.sleep(0.5)
+
+        # Set result
+        goal_handle.succeed()
+        result = NavigateToPose.Result()
+        result.error_code = 1  # Success
+
+        self.get_logger().info('Navigation goal completed successfully')
+        return result
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    action_server = NavigationActionServer()
+
+    executor = MultiThreadedExecutor()
+    executor.add_node(action_server)
+
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        action_server.destroy_node()
+        rclpy.shutdown()
+```
+
+### ROS2 Parameter Server and Client
+
+Node that manages parameters with callbacks and a client to modify them:
+
+```python
+import rclpy
+from rclpy.node import Node
+from rclpy.parameter import Parameter
+from std_msgs.msg import String
+
+class ParameterManager(Node):
+    def __init__(self):
+        super().__init__('parameter_manager')
+
+        # Declare parameters with default values and descriptions
+        self.declare_parameter('robot_name', 'default_robot')
+        self.declare_parameter('max_velocity', 1.0)
+        self.declare_parameter('safety_distance', 0.5)
+        self.declare_parameter('debug_mode', False)
+
+        # Create publisher for status updates
+        self.status_publisher = self.create_publisher(String, 'status_updates', 10)
+
+        # Set up parameter callback
+        self.add_on_set_parameters_callback(self.parameter_callback)
+
+        # Timer to periodically publish status
+        self.timer = self.create_timer(2.0, self.publish_status)
+
+        self.get_logger().info('Parameter manager initialized')
+
+        # Log initial parameter values
+        robot_name = self.get_parameter('robot_name').value
+        max_vel = self.get_parameter('max_velocity').value
+        self.get_logger().info(f'Initial params: name={robot_name}, max_vel={max_vel}')
+
+    def parameter_callback(self, params):
+        """Callback for parameter changes"""
+        result = SetParametersResult()
+        result.successful = True
+
+        for param in params:
+            if param.name == 'max_velocity':
+                if param.value <= 0:
+                    result.successful = False
+                    result.reason = 'max_velocity must be positive'
+                    self.get_logger().error('Invalid max_velocity value')
+                    break
+                else:
+                    self.get_logger().info(f'max_velocity changed to: {param.value}')
+            elif param.name == 'safety_distance':
+                if param.value < 0.1:
+                    result.successful = False
+                    result.reason = 'safety_distance must be at least 0.1'
+                    self.get_logger().error('Safety distance too small')
+                    break
+                else:
+                    self.get_logger().info(f'safety_distance changed to: {param.value}')
+
+        return result
+
+    def publish_status(self):
+        # Publish current status based on parameters
+        status_msg = String()
+        robot_name = self.get_parameter('robot_name').value
+        max_vel = self.get_parameter('max_velocity').value
+        debug_mode = self.get_parameter('debug_mode').value
+
+        status_msg.data = f'Robot: {robot_name}, Max Vel: {max_vel}, Debug: {debug_mode}'
+        self.status_publisher.publish(status_msg)
+
+        if debug_mode:
+            self.get_logger().info(f'Debug: {status_msg.data}')
+
+# Import needed for parameter callback
+from rclpy.parameter_service import SetParametersResult
+
+class ParameterClient(Node):
+    def __init__(self):
+        super().__init__('parameter_client')
+
+        # Timer to change parameters periodically
+        self.timer = self.create_timer(5.0, self.change_parameters)
+
+    def change_parameters(self):
+        # Change some parameters
+        new_params = [
+            Parameter('robot_name', Parameter.Type.STRING, 'updated_robot'),
+            Parameter('max_velocity', Parameter.Type.DOUBLE, 2.0),
+            Parameter('debug_mode', Parameter.Type.BOOL, True)
+        ]
+
+        for param in new_params:
+            self.set_parameters([param])
+
+        self.get_logger().info('Updated parameters')
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    # Create both nodes
+    param_manager = ParameterManager()
+    param_client = ParameterClient()
+
+    executor = MultiThreadedExecutor()
+    executor.add_node(param_manager)
+    executor.add_node(param_client)
+
+    try:
+        executor.spin()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        param_manager.destroy_node()
+        param_client.destroy_node()
+        rclpy.shutdown()
+```
+
+### ROS2 Launch File for Complex System
+
+Launch file that starts multiple nodes with parameters and remappings:
+
+```xml
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="use_sim_time" default="false"/>
+  <arg name="robot_name" default="my_robot"/>
+  <arg name="config_file" default="$(find-pkg-share my_robot_bringup)/config/robot_config.yaml"/>
+
+  <!-- Robot state publisher -->
+  <node pkg="robot_state_publisher" exec="robot_state_publisher" name="robot_state_publisher">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+    <param from="$(var config_file)"/>
+  </node>
+
+  <!-- Navigation stack -->
+  <group>
+    <node pkg="nav2_map_server" exec="map_server" name="map_server">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="yaml_filename" value="map.yaml"/>
+    </node>
+
+    <node pkg="nav2_local_planner" exec="local_planner" name="local_planner">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="robot_base_frame" value="$(var robot_name)/base_link"/>
+    </node>
+  </group>
+
+  <!-- Sensor processing nodes -->
+  <group>
+    <node pkg="my_robot_sensors" exec="lidar_processor" name="lidar_processor">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <remap from="input_scan" to="scan"/>
+      <remap from="processed_scan" to="filtered_scan"/>
+    </node>
+
+    <node pkg="my_robot_sensors" exec="camera_processor" name="camera_processor">
+      <param name="use_sim_time" value="$(var use_sim_time)"/>
+      <param name="camera_topic" value="camera/image_raw"/>
+    </node>
+  </group>
+
+  <!-- Robot controller -->
+  <node pkg="my_robot_control" exec="robot_controller" name="robot_controller">
+    <param name="use_sim_time" value="$(var use_sim_time)"/>
+    <param from="$(var config_file)"/>
+  </node>
+</launch>
+```
+
+## Practical Examples
+
+### Autonomous Navigation System
+
+Students implement a complete navigation system using actions for path planning, parameters for configuration, and topics for sensor data.
+
+**Objectives:**
+- Design action-based navigation with feedback
+- Implement parameter-based configuration
+- Integrate multiple communication patterns
+
+**Required Components:**
+- Navigation action server
+- Parameter management system
+- Sensor data publishers
+- Path planning algorithms
+
+**Evaluation Criteria:**
+- Robust navigation with proper feedback
+- Dynamic parameter adaptation
+- System integration quality
+
+### Multi-Modal Sensor Processing
+
+Students create a system that processes data from multiple sensors using different communication patterns.
+
+**Objectives:**
+- Implement sensor fusion with various patterns
+- Use actions for complex processing tasks
+- Manage configuration with parameters
+
+**Required Components:**
+- Multiple sensor nodes
+- Processing nodes with actions
+- Parameter configuration system
+
+**Evaluation Criteria:**
+- Effective sensor integration
+- Proper pattern selection
+- System reliability
+
+### Remote Robot Control Interface
+
+Students develop a remote control system using services for commands, actions for complex tasks, and parameters for settings.
+
+**Objectives:**
+- Implement service-based command interface
+- Use actions for complex operations
+- Provide parameter-based configuration
+
+**Required Components:**
+- Command service server
+- Action servers for complex tasks
+- Parameter management
+- Remote client interface
+
+**Evaluation Criteria:**
+- Responsive command handling
+- Proper task management
+- Configuration flexibility
+
+## Summary
+
+Chapter 4 explores advanced ROS2 communication patterns including actions for long-running tasks, parameters for configuration management, and complex system architectures. Students learned when to use each communication pattern appropriately, how to implement parameter callbacks, and how to structure complex systems using launch files. The practical examples demonstrated integration of multiple communication patterns in real-world robotic applications.
+
+## Quiz
+
+1. What is the main advantage of ROS2 actions over services?
+   - A: Actions are faster than services
+   - B: Actions are for hardware while services are for software
+   - C: Actions provide feedback during execution and handle long-running tasks
+   - D: There is no difference between actions and services
+
+   **Answer: C** - ROS2 actions provide feedback during execution, handle long-running tasks, and support cancellation, making them suitable for operations like navigation or manipulation that take time to complete.
+
+2. What are ROS2 parameters used for?
+   - A: To pass data between nodes like topics
+   - B: For dynamic configuration management at runtime
+   - C: To store large amounts of data
+   - D: To replace topics and services
+
+   **Answer: B** - ROS2 parameters are used for dynamic configuration management, allowing nodes to change their behavior at runtime without restarting.
+
+3. What is a lifecycle node in ROS2?
+   - A: A node that manages time
+   - B: A node with explicit state management and transitions
+   - C: A node that runs forever
+   - D: A special type of parameter
+
+   **Answer: B** - Lifecycle nodes have explicit state management and transitions (unconfigured, inactive, active, finalized), providing better control over node behavior.
+
+4. What is composition in ROS2?
+   - A: Writing code in a specific style
+   - B: Running multiple nodes in the same process for efficiency
+   - C: Creating complex messages
+   - D: Combining topics
+
+   **Answer: B** - Composition in ROS2 refers to running multiple nodes in the same process, which can improve performance by avoiding network overhead.
+
+5. When should you use an action instead of a service in ROS2?
+   - A: Always use actions for better performance
+   - B: For long-running operations that need feedback during execution
+   - C: For simple, fast operations
+   - D: Actions and services are interchangeable
+
+   **Answer: B** - Actions are preferred for long-running operations that need to provide feedback during execution, such as navigation or manipulation tasks, while services are better for quick request-response interactions.
+
+## Learning Outcomes
+
+After completing this chapter, students will be able to:
+- Design ROS2 architectures for robot systems
+- Implement nodes, topics, services, and actions
+- Manage parameters and configurations
+- Develop ROS2 packages for multi-robot systems
+
+## Prerequisites
+
+- Basic understanding of Python programming
+- Fundamentals of linear algebra and calculus
+- Basic knowledge of robotics concepts
+- Introduction to machine learning concepts
+- Completion of Module 0 (Introduction and Foundations)
+- Completion of Chapter 01 (Physical AI Basics)
+- Completion of Chapter 03 (ROS2 Nodes, Topics, and Services)
+
+## Estimated Duration
+
+6 hours

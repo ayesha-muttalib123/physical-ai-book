@@ -1,0 +1,422 @@
+---
+book_id: "physical-ai-humanoid-robotics-modules"
+title: "Physical AI & Humanoid Robotics"
+subtitle: "From Digital Agents to Real-World Humanoids - Complete Module Specification"
+version: "2.0.0"
+author: "Ayesha Muttalib"
+description: "A comprehensive textbook covering the fundamentals of Physical AI and Humanoid Robotics, exploring the intersection of artificial intelligence and physical systems. This book covers embodied intelligence, ROS2, Gazebo, NVIDIA Isaac, humanoid locomotion, perception, and practical applications in robotics through structured modules."
+
+target_audience:
+  - "Computer Science students"
+  - "Robotics engineers"
+  - "AI researchers"
+  - "Graduate students in AI and Robotics"
+  - "Practitioners interested in embodied AI"
+
+prerequisites:
+  - "Basic understanding of Python programming"
+  - "Fundamentals of linear algebra and calculus"
+  - "Basic knowledge of robotics concepts"
+  - "Introduction to machine learning concepts"
+
+learning_objectives:
+  - "Understand the principles of Physical AI and embodied intelligence"
+  - "Learn to implement ROS2 nodes for robot control and sensing"
+  - "Develop simulation environments using Gazebo and NVIDIA Isaac"
+  - "Implement humanoid locomotion algorithms"
+  - "Design perception systems for physical AI applications"
+  - "Build RAG chatbots for interactive learning experiences"
+  - "Integrate authentication and personalization in educational platforms"
+
+modules_structure:
+  -
+    module_id: "M0-intro-foundations"
+    module_title: "Introduction and Foundations"
+    module_description: "Foundational concepts of Physical AI and humanoid robotics"
+    chapters:
+      - "00-introduction"
+      - "01-physical-ai-basics"
+    duration: "6 hours"
+    learning_outcomes:
+      - "Define Physical AI and its significance"
+      - "Understand embodied cognition principles"
+      - "Identify key challenges in physical AI systems"
+    prerequisites: []
+    technologies_covered:
+      - "Basic ROS2 concepts"
+      - "Introduction to simulation"
+    assessment:
+      - "Module quiz"
+      - "Basic concept exercises"
+    resources:
+      - "Introduction to Physical AI reading materials"
+      - "Overview of robotics platforms"
+      - "Basic simulation environment setup guide"
+
+  -
+    module_id: "M1-sensing-perception"
+    module_title: "Sensing and Perception"
+    module_description: "Sensor integration, multi-modal perception, and embodied learning algorithms"
+    chapters:
+      - "02-sensing-and-embodied-intelligence"
+    duration: "5 hours"
+    learning_outcomes:
+      - "Integrate various sensor types for robot perception"
+      - "Implement multi-modal perception systems"
+      - "Apply embodied learning algorithms"
+      - "Address real-world sensing challenges"
+    prerequisites:
+      - "M0-intro-foundations"
+    technologies_covered:
+      - "Sensor fusion techniques"
+      - "Camera and LIDAR integration"
+      - "Perception algorithms"
+    assessment:
+      - "Sensor data processing exercises"
+      - "Perception system implementation"
+      - "Module quiz"
+    resources:
+      - "Sensor specifications and integration guides"
+      - "Perception algorithm implementations"
+      - "Real-world sensing case studies"
+
+  -
+    module_id: "M2-ros2-architecture"
+    module_title: "ROS2: The Robot's Nervous System"
+    module_description: "ROS2 architecture, communication patterns, and robot control systems"
+    chapters:
+      - "03-ros2-nervous-system"
+    duration: "6 hours"
+    learning_outcomes:
+      - "Design ROS2 architectures for robot systems"
+      - "Implement nodes, topics, services, and actions"
+      - "Manage parameters and configurations"
+      - "Develop ROS2 packages for multi-robot systems"
+    prerequisites:
+      - "M0-intro-foundations"
+    technologies_covered:
+      - "ROS2 Humble Hawksbill"
+      - "Node communication patterns"
+      - "ROS2 tools and debugging"
+      - "Package management"
+    assessment:
+      - "ROS2 node implementation exercises"
+      - "Communication pattern design"
+      - "Multi-robot system simulation"
+      - "Module quiz"
+    resources:
+      - "ROS2 tutorials and documentation"
+      - "Node implementation templates"
+      - "Debugging tools guide"
+
+  -
+    module_id: "M3-simulation-platforms"
+    module_title: "Digital Twin: Gazebo & Unity"
+    module_description: "Simulation environments for robot development and testing"
+    chapters:
+      - "04-digital-twin-gazebo-unity"
+    duration: "6 hours"
+    learning_outcomes:
+      - "Create simulation environments for robot testing"
+      - "Implement physics-based simulations"
+      - "Bridge simulation and reality"
+      - "Validate robot behaviors in simulation"
+    prerequisites:
+      - "M0-intro-foundations"
+      - "M2-ros2-architecture"
+    technologies_covered:
+      - "Gazebo Garden"
+      - "Unity for robotics"
+      - "Simulation to reality transfer"
+      - "Physics engines"
+    assessment:
+      - "Custom world creation in Gazebo"
+      - "Simulation-Reality gap analysis"
+      - "Testing and validation exercises"
+      - "Module quiz"
+    resources:
+      - "Gazebo world templates"
+      - "Physics parameter guides"
+      - "Simulation best practices"
+
+  -
+    module_id: "M4-ai-brain"
+    module_title: "NVIDIA Isaac: The Robot's Brain"
+    module_description: "NVIDIA Isaac platform for AI-powered robotics"
+    chapters:
+      - "05-nvidia-isaac-brain"
+    duration: "6 hours"
+    learning_outcomes:
+      - "Set up NVIDIA Isaac Sim environment"
+      - "Implement AI perception pipelines"
+      - "Train and deploy AI models for robotics"
+      - "Deploy solutions to hardware"
+    prerequisites:
+      - "M0-intro-foundations"
+      - "M1-sensing-perception"
+      - "M2-ros2-architecture"
+    technologies_covered:
+      - "NVIDIA Isaac Sim"
+      - "Isaac ROS integration"
+      - "AI perception models"
+      - "GPU acceleration"
+    assessment:
+      - "Isaac Sim environment setup"
+      - "AI perception pipeline implementation"
+      - "Model training and deployment"
+      - "Module quiz"
+    resources:
+      - "Isaac Sim installation guide"
+      - "AI model templates"
+      - "GPU optimization techniques"
+
+  -
+    module_id: "M5-multimodal-ai"
+    module_title: "Vision-Language-Action Models"
+    module_description: "Multimodal learning for embodied AI systems"
+    chapters:
+      - "06-vision-language-action"
+    duration: "5 hours"
+    learning_outcomes:
+      - "Implement multimodal learning systems"
+      - "Integrate vision-language models for robotics"
+      - "Develop action recognition and generation"
+      - "Apply embodied AI models to real-world tasks"
+    prerequisites:
+      - "M1-sensing-perception"
+      - "M4-ai-brain"
+    technologies_covered:
+      - "Vision-language models"
+      - "Multimodal fusion techniques"
+      - "Action recognition systems"
+      - "Embodied AI frameworks"
+    assessment:
+      - "Multimodal system implementation"
+      - "Vision-language integration"
+      - "Action recognition exercise"
+      - "Module quiz"
+    resources:
+      - "Multimodal model examples"
+      - "Vision-language dataset guides"
+      - "Action recognition tutorials"
+
+  -
+    module_id: "M6-locomotion"
+    module_title: "Humanoid Locomotion"
+    module_description: "Algorithms and techniques for humanoid robot movement"
+    chapters:
+      - "07-humanoid-locomotion"
+    duration: "6 hours"
+    learning_outcomes:
+      - "Implement bipedal walking algorithms"
+      - "Design balance and stability control"
+      - "Plan motion for humanoid robots"
+      - "Generate dynamic movements"
+      - "Adapt to different terrains"
+    prerequisites:
+      - "M2-ros2-architecture"
+      - "M3-simulation-platforms"
+    technologies_covered:
+      - "Walking pattern generators"
+      - "Balance control algorithms"
+      - "Motion planning"
+      - "Dynamic simulation"
+    assessment:
+      - "Walking algorithm implementation"
+      - "Balance control simulation"
+      - "Terrain adaptation exercise"
+      - "Module quiz"
+    resources:
+      - "Locomotion algorithm implementations"
+      - "Balance control templates"
+      - "Motion planning tools"
+
+  -
+    module_id: "M7-rag-integration"
+    module_title: "RAG Chatbot Integration"
+    module_description: "Retrieval-Augmented Generation for interactive learning"
+    chapters:
+      - "08-rag-chatbot-integration"
+    duration: "5 hours"
+    learning_outcomes:
+      - "Implement Retrieval-Augmented Generation systems"
+      - "Set up vector databases and embeddings"
+      - "Integrate Qdrant cloud services"
+      - "Develop FastAPI backends for RAG"
+      - "Create question answering systems"
+    prerequisites:
+      - "M0-intro-foundations"
+    technologies_covered:
+      - "Qdrant Cloud"
+      - "FastAPI"
+      - "Vector databases"
+      - "Embedding techniques"
+    assessment:
+      - "RAG system implementation"
+      - "Vector database setup"
+      - "Question answering exercise"
+      - "Module quiz"
+    resources:
+      - "RAG implementation templates"
+      - "Vector database configuration"
+      - "API development guides"
+
+  -
+    module_id: "M8-auth-personalization"
+    module_title: "Authentication & Personalization"
+    module_description: "User authentication and personalized learning experiences"
+    chapters:
+      - "09-auth-personalization"
+    duration: "4 hours"
+    learning_outcomes:
+      - "Implement Better-Auth for user authentication"
+      - "Design user profiles and preferences"
+      - "Create personalized learning paths"
+      - "Implement content adaptation"
+      - "Track user progress"
+    prerequisites:
+      - "M7-rag-integration"
+    technologies_covered:
+      - "Better-Auth"
+      - "User management systems"
+      - "Personalization algorithms"
+      - "Progress tracking"
+    assessment:
+      - "Authentication system implementation"
+      - "Personalization feature development"
+      - "Progress tracking exercise"
+      - "Module quiz"
+    resources:
+      - "Authentication templates"
+      - "Personalization algorithm examples"
+      - "User management guides"
+
+  -
+    module_id: "M9-capstone"
+    module_title: "Capstone Project: Complete Physical AI System"
+    module_description: "Integration of all components into a complete system"
+    chapters:
+      - "10-capstone-project"
+    duration: "8 hours"
+    learning_outcomes:
+      - "Integrate all system components"
+      - "Develop end-to-end physical AI system"
+      - "Test and validate integrated solution"
+      - "Deploy complete solution"
+      - "Document and present the system"
+    prerequisites:
+      - "All previous modules"
+    technologies_covered:
+      - "Full system integration"
+      - "Deployment strategies"
+      - "Documentation practices"
+      - "Presentation techniques"
+    assessment:
+      - "Complete system implementation"
+      - "Integration testing"
+      - "Final project presentation"
+      - "Comprehensive evaluation"
+    resources:
+      - "Integration templates"
+      - "Testing frameworks"
+      - "Documentation guidelines"
+
+module_dependencies:
+  "M0-intro-foundations": ["M1-sensing-perception", "M2-ros2-architecture", "M3-simulation-platforms", "M7-rag-integration"]
+  "M1-sensing-perception": ["M5-multimodal-ai"]
+  "M2-ros2-architecture": ["M4-ai-brain", "M6-locomotion"]
+  "M3-simulation-platforms": ["M4-ai-brain", "M6-locomotion"]
+  "M4-ai-brain": ["M5-multimodal-ai"]
+  "M7-rag-integration": ["M8-auth-personalization"]
+  "All modules": ["M9-capstone"]
+
+progression_pathways:
+  beginner_path:
+    modules: ["M0-intro-foundations", "M2-ros2-architecture", "M3-simulation-platforms", "M9-capstone"]
+    description: "Focus on ROS2 and simulation basics with a simplified capstone"
+    estimated_duration: "23 hours"
+
+  standard_path:
+    modules: ["M0-intro-foundations", "M1-sensing-perception", "M2-ros2-architecture", "M3-simulation-platforms", "M7-rag-integration", "M8-auth-personalization", "M9-capstone"]
+    description: "Complete coverage of core concepts with integrated RAG and personalization"
+    estimated_duration: "36 hours"
+
+  advanced_path:
+    modules: ["M0-intro-foundations", "M1-sensing-perception", "M2-ros2-architecture", "M3-simulation-platforms", "M4-ai-brain", "M5-multimodal-ai", "M6-locomotion", "M7-rag-integration", "M8-auth-personalization", "M9-capstone"]
+    description: "Comprehensive coverage including AI brains, multimodal systems, and locomotion"
+    estimated_duration: "53 hours"
+
+technical_requirements:
+  software:
+    - "ROS2 Humble Hawksbill"
+    - "Gazebo Garden"
+    - "NVIDIA Isaac Sim"
+    - "Python 3.8+"
+    - "FastAPI"
+    - "Qdrant Cloud"
+    - "Better-Auth"
+    - "Docusaurus"
+  hardware:
+    - "Computer with ROS2 compatibility"
+    - "GPU recommended for Isaac Sim"
+    - "Internet connection for cloud services"
+  cloud_services:
+    - "Qdrant Cloud Free Tier"
+    - "Neon Serverless Postgres"
+    - "GitHub Pages (for deployment)"
+
+pedagogical_approach:
+  - "Modular learning with clear dependencies"
+  - "Hands-on learning with practical examples"
+  - "Theory followed by implementation"
+  - "Progressive complexity from basic to advanced concepts"
+  - "Integration of multiple technologies"
+  - "Real-world applications and case studies"
+  - "Interactive elements and quizzes"
+  - "Capstone project for comprehensive learning"
+
+assessment_methods:
+  - "Module-specific quizzes and exercises"
+  - "Practical implementation tasks"
+  - "Simulation-based projects"
+  - "Module integration challenges"
+  - "Capstone project evaluation"
+  - "Peer review and collaboration"
+
+accessibility_features:
+  - "Urdu translation toggle"
+  - "Content depth adjustment"
+  - "Multiple learning modalities"
+  - "Progress tracking"
+  - "Personalized learning paths"
+  - "Multiple progression pathways"
+
+integration_with_rag:
+  - "Module-specific content as RAG knowledge base"
+  - "Interactive Q&A system for each module"
+  - "Context-aware responses"
+  - "Cross-module referencing"
+  - "Code example explanations"
+
+personalization_features:
+  - "User background assessment"
+  - "Adaptive content delivery"
+  - "Customized learning paths"
+  - "Progress-based recommendations"
+  - "Skill level adjustments"
+  - "Module preference settings"
+
+compliance_standards:
+  - "Follows hackathon requirements"
+  - "Uses only approved technologies"
+  - "No hallucinated commands or APIs"
+  - "Adheres to ethical AI principles"
+  - "Maintains technical accuracy"
+
+module_evaluation_criteria:
+  - "Completion of module-specific learning outcomes"
+  - "Successful implementation of practical exercises"
+  - "Passing module assessment scores"
+  - "Integration with subsequent modules"
+  - "Application of knowledge to capstone project"
+...

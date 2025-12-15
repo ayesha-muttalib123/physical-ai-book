@@ -1,0 +1,68 @@
+---
+specify_config:
+  version: "1.0"
+  description: "Configuration for the Specify system organizing Physical AI & Humanoid Robotics content"
+
+directories:
+  source_memory: ".specify/memory/"
+  tasks_folder: ".specify/memory/tasks/"
+  plans_folder: ".specify/memory/plans/"
+  phr_folder: ".specify/memory/phr/"
+
+auto_append:
+  enabled: true
+  target: "phr"
+  append_patterns:
+    - "**/*.yml"
+    - "**/*.yaml"
+    - "**/*.json"
+  excluded_patterns:
+    - ".git/**/*"
+    - "node_modules/**/*"
+    - ".specify/config.yml"
+
+maintain_structure:
+  enabled: true
+  preserve_hierarchy: true
+  sync_changes: true
+  backup_on_change: false
+
+logging:
+  level: "info"
+  format: "json"
+  output: "console"
+
+validation:
+  schema_check: true
+  cross_reference_check: true
+  dependency_check: true
+
+processing_rules:
+  - source_pattern: "specs/**/*.yml"
+    destination_folder: ".specify/memory/tasks/"
+    processor: "spec_to_tasks"
+    enabled: true
+  - source_pattern: "specs/**/*.yml"
+    destination_folder: ".specify/memory/plans/"
+    processor: "spec_to_plans"
+    enabled: true
+  - source_pattern: "specs/**/*.yml"
+    destination_folder: ".specify/memory/phr/"
+    processor: "spec_to_phr"
+    enabled: true
+
+hooks:
+  post_process:
+    - "validate_generated_files"
+    - "update_health_metrics"
+    - "generate_summary_reports"
+
+health_monitoring:
+  enabled: true
+  update_frequency: "daily"
+  metrics:
+    - "implementation_progress"
+    - "system_stability"
+    - "performance_efficiency"
+    - "resource_utilization"
+---

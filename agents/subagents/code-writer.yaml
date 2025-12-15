@@ -1,0 +1,51 @@
+# Code Writer Subagent Configuration
+name: "code-writer"
+role: "writes ROS2 / Gazebo / Isaac code examples"
+description: "A specialized subagent that creates accurate, educational code examples for ROS2, Gazebo, and NVIDIA Isaac technologies"
+version: "1.0.0"
+constraints:
+  - Only use documented APIs and commands
+  - Never invent non-existent functions or methods
+  - Follow official documentation standards
+  - Include appropriate explanations
+  - Ensure code is educational and practical
+
+# Supported technologies
+supported_technologies:
+  ros2:
+    version_compatibility: "foxy_humble_iron"
+    required_packages: ["rclpy", "std_msgs", "geometry_msgs", "sensor_msgs"]
+    coding_standards: "ros2_official_guidelines"
+  gazebo:
+    integration_type: "simulation_examples"
+    supported_features: ["plugins", "models", "worlds", "controllers"]
+    best_practices: "gazebo_documentation_standards"
+  nvidia_isaac:
+    scope: "application_examples"
+    supported_components: ["apps", "messages", "gxf_extensions"]
+    coding_patterns: "isaac_official_examples"
+
+# Code generation parameters
+code_generation:
+  language: "python_c++_hybrid"
+  documentation_inclusion: true
+  error_handling: "educational_yet_realistic"
+  modularity: "high"
+  reusability: "promoted"
+  complexity_level: "educational_progressive"
+
+# Quality requirements
+quality_requirements:
+  - syntax_accuracy: true
+  - functional_correctness: true
+  - documentation_quality: true
+  - educational_value: true
+  - consistency_with_text: true
+
+# Validation rules
+validation_rules:
+  - api_compliance_check: true
+  - syntax_validation: true
+  - educational_relevance: true
+  - practical_applicability: true
+  - constitutional_compliance: true

@@ -1,0 +1,469 @@
+---
+chapter_id: "08-integrating-unity-for-visualization"
+title: "Integrating Unity for Visualization"
+module_id: "M3-simulation-platforms"
+module_title: "Digital Twin: Gazebo & Unity"
+overview: "This chapter explores the integration of Unity as a visualization platform for robotics simulation, complementing Gazebo's physics capabilities. Students will learn how Unity can provide high-fidelity visual rendering for robotics applications, creating photorealistic environments and robot models. The chapter covers Unity's robotics tools, sensor simulation, and how to synchronize Unity with Gazebo or ROS2 for comprehensive digital twin solutions."
+
+why_it_matters: "Unity provides high-quality visualization capabilities that complement Gazebo's physics simulation, enabling photorealistic rendering for robotics applications. This combination allows for more realistic training environments for AI systems, better visualization for human operators, and enhanced presentation of robotic systems. Unity's real-time rendering and asset ecosystem make it an excellent choice for creating immersive, visually appealing digital twins."
+
+key_concepts:
+  - "Unity Robotics Package: Tools for integrating Unity with robotics workflows"
+  - "ROS2 Bridge: Connecting Unity with ROS2 for real-time communication"
+  - "High-Fidelity Rendering: Using Unity's rendering pipeline for photorealistic visuals"
+  - "Sensor Simulation in Unity: Creating realistic camera, LIDAR, and other sensor data"
+  - "Robotics Simulation Pipeline: Integrating Unity with Gazebo and other simulators"
+  - "Visual Asset Creation: Designing and importing 3D models for robotics"
+  - "Real-time Visualization: Streaming robot data for live visualization"
+  - "Perception Training: Using Unity environments to train perception systems"
+
+code_examples:
+  -
+    title: "Unity ROS2 Bridge Setup"
+    description: "Basic Unity script to connect to ROS2 and publish/subscriber to topics"
+    language: "csharp"
+    framework: "Unity with ROS2 Integration"
+    code: |
+      using System.Collections;
+      using System.Collections.Generic;
+      using UnityEngine;
+      using Unity.Robotics.ROSTCPConnector;
+      using Unity.Robotics.ROSTCPConnector.MessageTypes.Std_msgs;
+      using Unity.Robotics.ROSTCPConnector.MessageTypes.Geometry_msgs;
+      using Unity.Robotics.ROSTCPConnector.MessageTypes.Sensor_msgs;
+
+      public class ROS2Bridge : MonoBehaviour
+      {
+          ROSConnection ros;
+          public string rosIP = "127.0.0.1";
+          public int rosPort = 10000;
+
+          // Robot GameObject to control
+          public GameObject robot;
+
+          // Topic names
+          public string cmdVelTopic = "/cmd_vel";
+          public string laserScanTopic = "/scan";
+          public string odomTopic = "/odom";
+
+          // Robot state
+          private float linearVelocity = 0.0f;
+          private float angularVelocity = 0.0f;
+
+          void Start()
+          {
+              // Initialize ROS connection
+              ros = ROSConnection.GetOrCreateInstance();
+              ros.RegisterPublisher<TwistMsg>(cmdVelTopic);
+              ros.RegisterSubscriber<OdometryMsg>(odomTopic, OdomCallback);
+
+              // Connect to ROS
+              ros.Initialize(rosIP, rosPort);
+
+              Debug.Log("ROS2 Bridge initialized");
+          }
+
+          void Update()
+          {
+              // Update robot position based on velocities
+              if (robot != null)
+              {
+                  // Convert ROS velocities to Unity space
+                  robot.transform.Translate(Vector3.forward * linearVelocity * Time.deltaTime);
+                  robot.transform.Rotate(Vector3.up, angularVelocity * Time.deltaTime);
+              }
+          }
+
+          public void PublishVelocity(float linear, float angular)
+          {
+              // Create and publish Twist message
+              TwistMsg twist = new TwistMsg();
+              twist.linear = new Vector3Msg(linear, 0, 0);  // Linear velocity in X direction
+              twist.angular = new Vector3Msg(0, 0, angular);  // Angular velocity around Z axis
+
+              ros.Publish(cmdVelTopic, twist);
+          }
+
+          void OdomCallback(OdometryMsg odom)
+          {
+              // Update robot position from odometry
+              if (robot != null)
+              {
+                  robot.transform.position = new Vector3(
+                      (float)odom.pose.pose.position.x,
+                      (float)odom.pose.pose.position.z,  // Unity Y is up, ROS Z is up
+                      (float)odom.pose.pose.position.y   // Unity Z is forward, ROS Y is lateral
+                  );
+
+                  robot.transform.rotation = new Quaternion(
+                      (float)odom.pose.pose.orientation.x,
+                      (float)odom.pose.pose.orientation.z,
+                      (float)odom.pose.pose.orientation.y,
+                      (float)odom.pose.pose.orientation.w
+                  );
+              }
+          }
+
+          void OnApplicationQuit()
+          {
+              ros.Disconnect();
+          }
+      }
+
+  -
+    title: "Unity Sensor Simulation Script"
+    description: "Script to simulate LIDAR sensor in Unity and publish data to ROS2"
+    language: "csharp"
+    framework: "Unity with ROS2 Integration"
+    code: |
+      using System.Collections;
+      using System.Collections.Generic;
+      using UnityEngine;
+      using Unity.Robotics.ROSTCPConnector;
+      using Unity.Robotics.ROSTCPConnector.MessageTypes.Sensor_msgs;
+      using Unity.Robotics.ROSTCPConnector.MessageTypes.Std_msgs;
+
+      public class UnityLidarSimulation : MonoBehaviour
+      {
+          ROSConnection ros;
+          public string lidarTopic = "/scan";
+          public int laserCount = 360;
+          public float angleMin = -Mathf.PI;
+          public float angleMax = Mathf.PI;
+          public float angleIncrement;
+          public float rangeMin = 0.1f;
+          public float rangeMax = 10.0f;
+
+          public Transform lidarOrigin;  // Position of the LIDAR sensor
+          public LayerMask detectionLayers;  // Layers to detect
+
+          private float[] ranges;
+
+          void Start()
+          {
+              ros = ROSConnection.GetOrCreateInstance();
+              ros.RegisterPublisher<LaserScanMsg>(lidarTopic);
+
+              angleIncrement = (angleMax - angleMin) / laserCount;
+              ranges = new float[laserCount];
+
+              // Start lidar simulation
+              StartCoroutine(LidarSimulation());
+          }
+
+          IEnumerator LidarSimulation()
+          {
+              while (true)
+              {
+                  // Perform raycasts for each laser angle
+                  for (int i = 0; i < laserCount; i++)
+                  {
+                      float angle = angleMin + i * angleIncrement;
+
+                      // Calculate ray direction
+                      Vector3 direction = new Vector3(
+                          Mathf.Cos(angle),
+                          0,
+                          Mathf.Sin(angle)
+                      );
+
+                      // Transform to world space
+                      direction = lidarOrigin.TransformDirection(direction);
+
+                      // Perform raycast
+                      RaycastHit hit;
+                      if (Physics.Raycast(lidarOrigin.position, direction, out hit, rangeMax, detectionLayers))
+                      {
+                          ranges[i] = hit.distance;
+                      }
+                      else
+                      {
+                          ranges[i] = float.PositiveInfinity;  // No hit
+                      }
+                  }
+
+                  // Publish laser scan
+                  PublishLaserScan();
+
+                  // Wait for next update (e.g., 10Hz)
+                  yield return new WaitForSeconds(0.1f);
+              }
+          }
+
+          void PublishLaserScan()
+          {
+              LaserScanMsg scan = new LaserScanMsg();
+
+              scan.header = new HeaderMsg();
+              scan.header.stamp = new TimeMsg();
+              scan.header.frame_id = "lidar_frame";
+
+              scan.angle_min = angleMin;
+              scan.angle_max = angleMax;
+              scan.angle_increment = angleIncrement;
+              scan.time_increment = 0.0f;  // For simplicity
+              scan.scan_time = 0.1f;  // 10Hz
+              scan.range_min = rangeMin;
+              scan.range_max = rangeMax;
+
+              // Convert ranges to ROS format
+              scan.ranges = new float[ranges.Length];
+              for (int i = 0; i < ranges.Length; i++)
+              {
+                  if (ranges[i] == float.PositiveInfinity)
+                      scan.ranges[i] = float.PositiveInfinity;
+                  else
+                      scan.ranges[i] = ranges[i];
+              }
+
+              // Initialize intensities array
+              scan.intensities = new float[ranges.Length];
+
+              ros.Publish(lidarTopic, scan);
+          }
+      }
+
+  -
+    title: "Unity Camera Sensor Simulation"
+    description: "Script to simulate RGB camera in Unity and publish images to ROS2"
+    language: "csharp"
+    framework: "Unity with ROS2 Integration"
+    code: |
+      using System.Collections;
+      using System.Collections.Generic;
+      using UnityEngine;
+      using Unity.Robotics.ROSTCPConnector;
+      using Unity.Robotics.ROSTCPConnector.MessageTypes.Sensor_msgs;
+      using Unity.Robotics.ROSTCPConnector.MessageTypes.Std_msgs;
+      using System.Threading.Tasks;
+      using System.IO;
+
+      public class UnityCameraSimulation : MonoBehaviour
+      {
+          ROSConnection ros;
+          public string cameraTopic = "/camera/image_raw";
+          public string infoTopic = "/camera/camera_info";
+
+          public Camera unityCamera;  // The Unity camera to use
+          public int imageWidth = 640;
+          public int imageHeight = 480;
+
+          private RenderTexture renderTexture;
+          private Texture2D texture2D;
+
+          void Start()
+          {
+              ros = ROSConnection.GetOrCreateInstance();
+              ros.RegisterPublisher<ImageMsg>(cameraTopic);
+              ros.RegisterPublisher<CameraInfoMsg>(infoTopic);
+
+              // Create render texture for camera
+              renderTexture = new RenderTexture(imageWidth, imageHeight, 24);
+              unityCamera.targetTexture = renderTexture;
+
+              texture2D = new Texture2D(imageWidth, imageHeight, TextureFormat.RGB24, false);
+
+              // Start camera simulation
+              StartCoroutine(CameraSimulation());
+          }
+
+          IEnumerator CameraSimulation()
+          {
+              while (true)
+              {
+                  // Capture image from camera
+                  yield return new WaitForEndOfFrame();
+
+                  // Copy render texture to texture2D
+                  RenderTexture.active = renderTexture;
+                  texture2D.ReadPixels(new Rect(0, 0, imageWidth, imageHeight), 0, 0);
+                  texture2D.Apply();
+
+                  // Convert texture to ROS image format
+                  byte[] imageBytes = texture2D.EncodeToJPG(85);  // 85% quality
+
+                  // Create and publish ROS image message
+                  ImageMsg imageMsg = new ImageMsg();
+                  imageMsg.header = new HeaderMsg();
+                  imageMsg.header.stamp = new TimeMsg();
+                  imageMsg.header.frame_id = "camera_frame";
+
+                  imageMsg.height = (uint)imageHeight;
+                  imageMsg.width = (uint)imageWidth;
+                  imageMsg.encoding = "rgb8";
+                  imageMsg.is_bigendian = 0;
+                  imageMsg.step = (uint)(imageWidth * 3);  // 3 bytes per pixel (RGB)
+                  imageMsg.data = imageBytes;
+
+                  ros.Publish(cameraTopic, imageMsg);
+
+                  // Publish camera info
+                  PublishCameraInfo();
+
+                  // Wait for next frame (e.g., 30fps)
+                  yield return new WaitForSeconds(1.0f / 30.0f);
+              }
+          }
+
+          void PublishCameraInfo()
+          {
+              CameraInfoMsg info = new CameraInfoMsg();
+              info.header = new HeaderMsg();
+              info.header.stamp = new TimeMsg();
+              info.header.frame_id = "camera_frame";
+
+              info.height = (uint)imageHeight;
+              info.width = (uint)imageWidth;
+
+              // Standard camera intrinsic parameters
+              info.k = new double[9] {
+                  320.0, 0.0, 320.0,   // fx, 0, cx
+                  0.0, 320.0, 240.0,   // 0, fy, cy
+                  0.0, 0.0, 1.0        // 0, 0, 1
+              };
+
+              // Distortion coefficients (assuming no distortion)
+              info.d = new double[5] { 0.0, 0.0, 0.0, 0.0, 0.0 };
+
+              // Projection matrix
+              info.p = new double[12] {
+                  320.0, 0.0, 320.0, 0.0,   // [fx, 0, cx, 0]
+                  0.0, 320.0, 240.0, 0.0,   // [0, fy, cy, 0]
+                  0.0, 0.0, 1.0, 0.0        // [0, 0, 1, 0]
+              };
+
+              ros.Publish(infoTopic, info);
+          }
+
+          void OnDestroy()
+          {
+              if (renderTexture != null)
+              {
+                  renderTexture.Release();
+              }
+          }
+      }
+
+practical_examples:
+  -
+    title: "Photorealistic Warehouse Simulation"
+    description: "Students create a photorealistic warehouse environment in Unity with realistic lighting and materials, then integrate with ROS2 for robot simulation."
+    objectives:
+      - "Design photorealistic warehouse environment"
+      - "Integrate with ROS2 robot control"
+      - "Implement realistic sensor simulation"
+      - "Compare with Gazebo simulation"
+    required_components:
+      - "Unity with Robotics Package"
+      - "ROS2 installation"
+      - "Robot models"
+      - "Asset materials and lighting"
+    evaluation_criteria:
+      - "Visual realism of environment"
+      - "Proper ROS2 integration"
+      - "Accurate sensor simulation"
+      - "Performance optimization"
+  -
+    title: "Human-Robot Interaction Visualization"
+    description: "Students develop a Unity visualization to help human operators monitor and interact with robots in complex environments."
+    objectives:
+      - "Create intuitive visualization interface"
+      - "Implement robot state display"
+      - "Design interaction mechanisms"
+      - "Test with human operators"
+    required_components:
+      - "Unity development environment"
+      - "Robot state data streams"
+      - "User interface components"
+      - "Interaction design tools"
+    evaluation_criteria:
+      - "Usability of interface"
+      - "Effectiveness of visualization"
+      - "Quality of interaction design"
+      - "User feedback scores"
+  -
+    title: "Perception System Training"
+    description: "Students use Unity to generate diverse, photorealistic training data for computer vision systems."
+    objectives:
+      - "Create diverse environments and lighting conditions"
+      - "Generate synthetic sensor data"
+      - "Train perception models"
+      - "Validate on real data"
+    required_components:
+      - "Unity with asset libraries"
+      - "Perception training pipeline"
+      - "Synthetic data generation tools"
+      - "Real-world validation data"
+    evaluation_criteria:
+      - "Diversity of synthetic data"
+      - "Quality of generated data"
+      - "Performance improvement on real data"
+      - "Generalization capabilities"
+
+summary: "Chapter 8 explored the integration of Unity as a visualization platform for robotics, demonstrating how to create photorealistic environments and sensor simulations. Students learned to use Unity's robotics tools, connect to ROS2, and create realistic camera and LIDAR sensors. The practical examples showed how Unity complements Gazebo by providing high-fidelity visualization for robotics applications."
+
+quiz:
+  -
+    question: "What is the Unity Robotics Package used for?"
+    options:
+      - A: Creating robot hardware
+      - B: Tools for integrating Unity with robotics workflows
+      - C: Programming real robots
+      - D: Building physical robots
+    correct_answer: "B"
+    explanation: "The Unity Robotics Package provides tools for integrating Unity with robotics workflows, including ROS2 communication and sensor simulation."
+  -
+    question: "What is the main advantage of using Unity for robotics visualization?"
+    options:
+      - A: It's cheaper than other options
+      - B: It provides high-fidelity, photorealistic rendering
+      - C: It runs faster than other simulators
+      - D: It has better physics simulation
+    correct_answer: "B"
+    explanation: "The main advantage of Unity is its ability to provide high-fidelity, photorealistic rendering that complements physics simulators like Gazebo."
+  -
+    question: "How does Unity typically connect to ROS2?"
+    options:
+      - A: Through direct library linking
+      - B: Using the ROS2 TCP Connector
+      - C: Through file exchange
+      - D: Unity cannot connect to ROS2
+    correct_answer: "B"
+    explanation: "Unity typically connects to ROS2 using the ROS2 TCP Connector, which enables communication between Unity and ROS2 nodes."
+  -
+    question: "What is a common use case for Unity in robotics?"
+    options:
+      - A: Only for gaming applications
+      - B: High-fidelity visualization and perception training
+      - C: Running robot controllers
+      - D: Physical robot construction
+    correct_answer: "B"
+    explanation: "Unity is commonly used for high-fidelity visualization and generating synthetic data for perception system training."
+  -
+    question: "What type of data does a Unity camera simulation typically publish to ROS2?"
+    options:
+      - A: Laser scan data
+      - B: Point cloud data
+      - C: RGB image data
+      - D: IMU data
+    correct_answer: "C"
+    explanation: "A Unity camera simulation typically publishes RGB image data to ROS2 in the sensor_msgs/Image format."
+
+module_learning_outcomes:
+  - "Create simulation environments for robot testing"
+  - "Implement physics-based simulations"
+  - "Bridge simulation and reality"
+  - "Validate robot behaviors in simulation"
+
+prerequisites:
+  - "Basic understanding of Python programming"
+  - "Fundamentals of linear algebra and calculus"
+  - "Basic knowledge of robotics concepts"
+  - "Introduction to machine learning concepts"
+  - "Completion of Module 0 (Introduction and Foundations)"
+  - "Completion of Chapter 01 (Physical AI Basics)"
+  - "Completion of Chapter 06 (Introduction to Digital Twins)"
+  - "Completion of Chapter 07 (Gazebo Simulation Basics)"
+
+estimated_duration: "5 hours"
+...
