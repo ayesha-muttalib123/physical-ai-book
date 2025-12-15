@@ -137,3 +137,16 @@
 - All future chapter generation must use constitution numbering
 - Files must be generated in correct numeric order
 - No unnumbered chapter names permitted
+
+## GitHub Pages Deployment Steps
+- Repository name: physical-ai-book
+- GitHub Pages source: gh-pages branch, root folder
+- Docusaurus deployment completed successfully with build in 'build/' directory
+- Next steps required for deployment:
+  1. Create GitHub repository 'physical-ai-book' under 'ayesha-muttalib123' organization
+  2. Push local repository to GitHub:
+     - git remote add origin https://github.com/ayesha-muttalib123/physical-ai-book.git
+     - git push -u origin main
+  3. Enable GitHub Pages in repository settings, selecting gh-pages branch
+  4. Run 'npx docusaurus deploy' to publish built site to gh-pages branch
+  5. Site will be accessible at https://ayesha-muttalib123.github.io/physical-ai-book/

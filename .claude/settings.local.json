@@ -98,7 +98,19 @@
       "Bash(npx docusaurus start --port 3002)",
       "Bash(timeout 30 npx docusaurus start --port 3002)",
       "Bash(git init)",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git config user.name \"Claude Sonnet 4.5\")",
+      "Bash(git config user.email \"noreply@anthropic.com\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nDeploy Docusaurus book to GitHub Pages\n\n- Completed all markdown files with proper formatting\n- Fixed YAML parsing errors by quoting titles with colons\n- Updated sidebars.js with proper file references\n- Updated homepage with chapter links\n- Configured for GitHub Pages deployment\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git remote add origin https://github.com/username/physical-ai-book.git)",
+      "Bash(git push -f origin main)",
+      "Bash(git branch -M main)",
+      "Bash(gh --version)",
+      "Bash(npx docusaurus deploy)",
+      "Bash(set GIT_USER=claude)",
+      "Bash(set USE_SSH=true)",
+      "Bash(set DEPLOYMENT_BRANCH=gh-pages)",
+      "Bash(npx cross-env GIT_USER=claude npx docusaurus deploy)"
     ]
   }
 }

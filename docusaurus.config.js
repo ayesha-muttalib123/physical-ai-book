@@ -23,9 +23,13 @@ const config = {
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
   i18n: {
-    defaultLocale: 'en',
-    locales: ['en', 'ur'],
-  },
+  defaultLocale: 'en',
+  locales: ['en', 'ur'],
+ },
+ themeConfig: {
+  direction: 'ltr',
+},
+
 
   presets: [
     [
@@ -39,7 +43,7 @@ const config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/ayesha-muttalib/physical-ai-book/tree/main/',
+            'https://github.com/ayesha-muttalib123/physical-ai-book/tree/main/',
         },
         blog: false,
         theme: {
@@ -58,7 +62,7 @@ const config = {
         title: 'Physical AI & Humanoid Robotics',
         logo: {
           alt: 'Physical AI Logo',
-          src: 'img/logo.svg',
+          src: 'img/Ai.jpg',
         },
         items: [
           {
@@ -68,7 +72,7 @@ const config = {
             label: 'Book',
           },
           {
-            href: 'https://github.com/ayesha-muttalib/physical-ai-book',
+            href: 'https://github.com/ayesha-muttalib123/physical-ai-book',
             label: 'GitHub',
             position: 'right',
           },
@@ -112,7 +116,7 @@ const config = {
             items: [
               {
                 label: 'GitHub',
-                href: 'https://github.com/ayesha-muttalib/physical-ai-book',
+                href: 'https://github.com/ayesha-muttalib123/physical-ai-book',
               },
             ],
           },
